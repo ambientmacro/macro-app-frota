@@ -4,6 +4,31 @@ import { db } from "../../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { Link } from "react-router-dom";
 
+const diasSemana = [
+    "domingo",
+    "segunda",
+    "terça",
+    "quarta",
+    "quinta",
+    "sexta",
+    "sábado"
+];
+
+const getDiaSemana = (date: Date) => diasSemana[date.getDay()];
+
+const formatarData = (date: Date) =>
+    date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    });
+
+const formatarHora = (date: Date) =>
+    date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
 const HistoricoChecklist = () => {
     const { user } = useUser();
     const [lista, setLista] = useState<any[]>([]);
@@ -13,7 +38,7 @@ const HistoricoChecklist = () => {
         if (!user) return;
 
         try {
-            // 🔥 Data limite: últimos 30 dias
+            // 🔥 Últimos 30 dias
             const hoje = new Date();
             const trintaDiasAtras = new Date();
             trintaDiasAtras.setDate(hoje.getDate() - 30);
@@ -50,22 +75,52 @@ const HistoricoChecklist = () => {
                 <p>Nenhum checklist encontrado nos últimos 30 dias.</p>
             )}
 
-            {lista.map((item) => (
-                <div key={item.id} className="card p-3 mb-3">
-                    <h5>{item.checklistTitulo}</h5>
+            {lista.map((item) => {
+                const data = item.data.toDate();
+                const diaSemana = getDiaSemana(data);
+                const dataFormatada = formatarData(data);
+                const horaFormatada = formatarHora(data);
 
-                    <p className="text-muted">
-                        Data: {item.data.toDate().toLocaleString()}
-                    </p>
-
-                    <Link
-                        to={`/visualizar-checklist/${item.id}`}
-                        className="btn btn-outline-primary btn-sm"
+                return (
+                    <div
+                        key={item.id}
+                        className="card mb-3 p-3"
+                        style={{
+                            borderLeft: "6px solid #0d6efd",
+                            background: "#f8f9fa",
+                        }}
                     >
-                        Ver detalhes
-                    </Link>
-                </div>
-            ))}
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4
+                                    style={{
+                                        margin: 0,
+                                        textTransform: "capitalize",
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    {diaSemana}
+                                </h4>
+
+                                <small className="text-muted">
+                                    {dataFormatada} — {horaFormatada}
+                                </small>
+                            </div>
+
+                            <Link
+                                to={`/visualizar-checklist/${item.id}`}
+                                className="btn btn-outline-primary btn-sm"
+                            >
+                                Ver detalhes
+                            </Link>
+                        </div>
+
+                        <hr />
+
+                        <h5 style={{ margin: 0 }}>{item.checklistTitulo}</h5>
+                    </div>
+                );
+            })}
         </div>
     );
 };

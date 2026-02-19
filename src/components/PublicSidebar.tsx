@@ -100,6 +100,11 @@ const PublicSidebar: React.FC<PublicSidebarProps> = ({ isOpen, onClose }) => {
         <Link to="/historico-checklist" style={linkStyle('/historico-checklist')}>
           <FiCalendar /> Histórico de Checklist
         </Link>
+
+        {/* Lançar Jornada Trabalho */}
+        <Link to="/lancar-ponto-jornada" style={linkStyle('/lancar-ponto-jornada')}>
+          <FiCalendar /> Lançar Jornada Trabalho
+        </Link>
       </nav>
 
       <div style={{ padding: '1rem' }}>

@@ -39,17 +39,17 @@ const Login = () => {
           uid: userCredential.user.uid,
           displayName: userCredential.user.displayName,
         });
-        Swal.fire({
-          title: '🎉 Bem-vindo!',
-          text: `Que bom te ver por aqui, ${userCredential.user.email}! 🚀`,
-          icon: 'success',
-          confirmButtonText: 'Vamos lá!',
-          timer: 3500,
-          timerProgressBar: true,
-          showCancelButton: true,
-          cancelButtonText: 'Explorar primeiro',
-          background: '#f5f5f5',
-        });
+        // Swal.fire({
+        //   title: '🎉 Bem-vindo!',
+        //   text: `Que bom te ver por aqui, ${userCredential.user.email}! 🚀`,
+        //   icon: 'success',
+        //   confirmButtonText: 'Vamos lá!',
+        //   timer: 3500,
+        //   timerProgressBar: true,
+        //   showCancelButton: true,
+        //   cancelButtonText: 'Explorar primeiro',
+        //   background: '#f5f5f5',
+        // });
         navigate('/dashboard');
       } else {
         if (senha !== confirmarSenha) {
