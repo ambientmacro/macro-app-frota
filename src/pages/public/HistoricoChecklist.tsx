@@ -10,12 +10,18 @@ const HistoricoChecklist = () => {
     const [carregando, setCarregando] = useState(true);
 
     const carregar = async () => {
-        if (!user) return; // 🔥 evita erro de null
+        if (!user) return;
 
         try {
+            // 🔥 Data limite: últimos 30 dias
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+
             const q = query(
                 collection(db, "checklists_resolvidos"),
                 where("motoristaId", "==", user.uid),
+                where("data", ">=", trintaDiasAtras),
                 orderBy("data", "desc")
             );
 
@@ -32,16 +38,16 @@ const HistoricoChecklist = () => {
 
     useEffect(() => {
         carregar();
-    }, [user]); // 🔥 só roda quando o user existir
+    }, [user]);
 
     return (
         <div className="container mt-4">
-            <h2 className="text-primary mb-3">Histórico de Checklists</h2>
+            <h2 className="text-primary mb-3">Histórico de Checklists (últimos 30 dias)</h2>
 
             {carregando && <p>Carregando...</p>}
 
             {!carregando && lista.length === 0 && (
-                <p>Nenhum checklist encontrado.</p>
+                <p>Nenhum checklist encontrado nos últimos 30 dias.</p>
             )}
 
             {lista.map((item) => (

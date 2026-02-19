@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { UserProvider } from "./contexts/UserContext";
+// src/App.tsx
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useUser, UserProvider } from "./contexts/UserContext";
 
 import PublicLayout from "./layouts/PublicLayout";
 import PrivateLayout from "./layouts/PrivateLayout";
@@ -28,50 +29,68 @@ import RelacionarEquipamentoChecklist from "./pages/admin/RelacionarEquipamentoC
 import LegendasAdmin from "./pages/admin/LegendasAdmin";
 import FuncionariosAdmin from "./pages/admin/FuncionariosAdmin";
 
-function App() {
+function AppRoutes() {
+  const { user, loading } = useUser();
+
+  // 🔥 Enquanto o Firebase verifica a sessão, não renderiza nada
+  if (loading) {
+    return (
+      <div style={{ padding: 30, textAlign: "center" }}>
+        <h3>Carregando sessão...</h3>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+
+      {/* ROTAS PÚBLICAS */}
+      <Route path="/" element={<><Header /><Home /></>} />
+      <Route path="/login" element={<><Header /><Login /></>} />
+
+      {/* ROTAS PÚBLICAS AUTENTICADAS (CLIENTE / MOTORISTA) */}
+      <Route element={<PublicLayout />}>
+        <Route path="/dashboard-cliente-publico" element={<DashboardClientePublico />} />
+        <Route path="/minhas-solicitacoes" element={<MinhasSolicitacoes />} />
+
+        {/* Motorista */}
+        <Route path="/lancar-checklist" element={<LancarCheckList />} />
+        <Route path="/historico-checklist" element={<HistoricoChecklist />} />
+        <Route path="/visualizar-checklist/:id" element={<VisualizarChecklist />} />
+      </Route>
+
+      {/* ROTAS PRIVADAS (ADMIN) */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <PrivateLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Admin */}
+        <Route path="/admin/empresas" element={<EmpresasAdmin />} />
+        <Route path="/admin/novo-equipamento" element={<NovoEquipamento />} />
+        <Route path="/admin/novo-checklist" element={<NovoCheckList />} />
+        <Route path="/admin/relacionar-checklist" element={<RelacionarEquipamentoChecklist />} />
+        <Route path="/admin/funcionarios" element={<FuncionariosAdmin />} />
+        <Route path="/legendas" element={<LegendasAdmin />} />
+      </Route>
+
+      {/* ROTA PADRÃO */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
+    </Routes>
+  );
+}
+
+export default function App() {
   return (
     <UserProvider>
       <Router>
-        <Routes>
-
-          {/* ROTAS PÚBLICAS */}
-          <Route path="/" element={<><Header /><Home /></>} />
-          <Route path="/login" element={<><Header /><Login /></>} />
-
-          {/* ROTAS PÚBLICAS AUTENTICADAS (CLIENTE / MOTORISTA) */}
-          <Route element={<PublicLayout />}>
-            <Route path="/dashboard-cliente-publico" element={<DashboardClientePublico />} />
-            <Route path="/minhas-solicitacoes" element={<MinhasSolicitacoes />} />
-
-            {/* Motorista */}
-            <Route path="/lancar-checklist" element={<LancarCheckList />} />
-            <Route path="/historico-checklist" element={<HistoricoChecklist />} />
-            <Route path="/visualizar-checklist/:id" element={<VisualizarChecklist />} />
-          </Route>
-
-          {/* ROTAS PRIVADAS (ADMIN) */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <PrivateLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-
-            {/* Admin */}
-            <Route path="/admin/empresas" element={<EmpresasAdmin />} />
-            <Route path="/admin/novo-equipamento" element={<NovoEquipamento />} />
-            <Route path="/admin/novo-checklist" element={<NovoCheckList />} />
-            <Route path="/admin/relacionar-checklist" element={<RelacionarEquipamentoChecklist />} />
-            <Route path="/admin/funcionarios" element={<FuncionariosAdmin />} />
-            <Route path="/legendas" element={<LegendasAdmin />} />
-          </Route>
-
-        </Routes>
+        <AppRoutes />
       </Router>
     </UserProvider>
   );
 }
-
-export default App;

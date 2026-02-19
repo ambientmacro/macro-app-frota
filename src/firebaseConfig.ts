@@ -1,7 +1,13 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+// src/firebaseConfig.ts
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  browserLocalPersistence,
+  setPersistence
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
+// Configurações via .env
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,17 +18,24 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// App principal (ADM logado)
+// -----------------------------------------------------
+// 🔥 APP PRINCIPAL (onde o ADM e o motorista fazem login)
+// -----------------------------------------------------
 export const firebaseApp = initializeApp(firebaseConfig);
 
 // Auth principal
 export const auth = getAuth(firebaseApp);
 
+// 🔥 Persistência REAL de sessão (ADM e motorista continuam logados)
+setPersistence(auth, browserLocalPersistence);
+
 // Firestore
 export const db = getFirestore(firebaseApp);
 
-// App secundário (para criar usuários sem trocar sessão)
+// -----------------------------------------------------
+// 🔥 APP SECUNDÁRIO (para criar usuários sem trocar sessão)
+// -----------------------------------------------------
 export const firebaseAppAdmin = initializeApp(firebaseConfig, "adminApp");
 
-// Auth secundário
+// Auth secundário (não interfere na sessão atual)
 export const authAdmin = getAuth(firebaseAppAdmin);
