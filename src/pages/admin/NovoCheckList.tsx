@@ -225,7 +225,7 @@ const NovoCheckList: React.FC = () => {
             onClick={() =>
               appendCampo({
                 titulo: "",
-                tipo: "texto",
+                tipo: "lista", // <---- Definindo o padrão de carregamento da caixa de seleção!
                 obrigatorio: false,
                 critico: false,
                 opcoes: [],

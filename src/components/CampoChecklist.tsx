@@ -24,12 +24,14 @@ const CampoChecklist: React.FC<Props> = ({
     legendas,
     onNovaLegendaClick
 }) => {
+
     const { fields: subitens, append, remove } = useFieldArray({
         control,
         name: `campos.${campoIndex}.subitens`
     });
 
-    const tipo = watch(`campos.${campoIndex}.tipo`);
+    // Agora o tipo SEMPRE vem como "lista" porque o append() no componente pai já define isso
+    const tipo = watch(`campos.${campoIndex}.tipo`) || "lista";
     const opcoes = watch(`campos.${campoIndex}.opcoes`) || [];
 
     return (
@@ -59,14 +61,12 @@ const CampoChecklist: React.FC<Props> = ({
             <div className="row">
                 <div className="col-md-4">
                     <label className="form-label fw-bold">Tipo do campo</label>
+
                     <select
                         {...register(`campos.${campoIndex}.tipo`)}
                         className="form-select"
+                        defaultValue="lista"   // 🔥 garante fallback visual
                     >
-                        <option value="texto">Texto</option>
-                        <option value="numero">Número</option>
-                        <option value="booleano">Sim / Não</option>
-                        <option value="data">Data</option>
                         <option value="lista">Lista</option>
                     </select>
                 </div>
@@ -95,81 +95,44 @@ const CampoChecklist: React.FC<Props> = ({
                 </div>
             </div>
 
-            {/* CONFIGURAÇÕES DO TIPO TEXTO */}
-            {tipo === "texto" && (
-                <div className="mt-3">
-
-                    <label className="form-label fw-bold">Limite mínimo de caracteres</label>
-                    <input
-                        type="number"
-                        {...register(`campos.${campoIndex}.minLength`)}
-                        className="form-control mb-2"
-                        placeholder="Ex: 5"
-                    />
-
-                    <label className="form-label fw-bold">Limite máximo de caracteres</label>
-                    <input
-                        type="number"
-                        {...register(`campos.${campoIndex}.maxLength`)}
-                        className="form-control mb-2"
-                        placeholder="Ex: 200"
-                    />
-
-                    <label className="form-label fw-bold">Placeholder</label>
-                    <input
-                        type="text"
-                        {...register(`campos.${campoIndex}.placeholder`)}
-                        className="form-control mb-2"
-                        placeholder="Ex: Digite sua observação..."
-                    />
-
-                    <label className="form-label fw-bold">Tamanho do campo</label>
-                    <select
-                        {...register(`campos.${campoIndex}.tamanho`)}
-                        className="form-select"
-                    >
-                        <option value="curto">Curto</option>
-                        <option value="medio">Médio</option>
-                        <option value="longo">Longo</option>
-                    </select>
-
-                </div>
-            )}
-
             {/* MINI-CRUD DO TIPO LISTA */}
             {tipo === "lista" && (
                 <div className="mt-3">
 
-                    <label className="form-label fw-bold">Opções da lista</label>
+                    <div className="mt-3">
 
-                    {/* LISTA DE OPÇÕES */}
-                    <div className="mb-3">
-                        {opcoes.length > 0 ? (
-                            opcoes.map((op: string, opIndex: number) => (
-                                <div
-                                    key={opIndex}
-                                    className="d-flex align-items-center justify-content-between border p-2 mb-2 rounded"
-                                >
-                                    <span>{op}</span>
+                        <label className="form-label fw-bold">Opções da lista do Motorista</label>
 
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm btn-danger"
-                                        onClick={() => {
-                                            const novaLista = opcoes.filter((_: any, i: number) => i !== opIndex);
-                                            setValue(`campos.${campoIndex}.opcoes`, novaLista);
-                                        }}
+                        <div className="mb-3">
+                            {opcoes.length > 0 ? (
+                                opcoes.map((op: string, opIndex: number) => (
+                                    <div
+                                        key={opIndex}
+                                        className="d-flex align-items-center justify-content-between border p-2 mb-2 rounded"
                                     >
-                                        Remover
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-muted">Nenhuma opção adicionada ainda.</p>
-                        )}
+                                        <span>{op}</span>
+
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-danger"
+                                            onClick={() => {
+                                                const novaLista = opcoes.filter((_: any, i: number) => i !== opIndex);
+                                                setValue(`campos.${campoIndex}.opcoes`, novaLista);
+                                            }}
+                                        >
+                                            Remover
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-muted">Nenhuma opção adicionada ainda. Adicione no campo abaixo as opções que o motorista terá para selecionar os campos de subitens.</p>
+                            )}
+                        </div>
+
+
+
                     </div>
 
-                    {/* ADICIONAR NOVA OPÇÃO */}
                     <div className="d-flex">
                         <input
                             type="text"
@@ -210,6 +173,7 @@ const CampoChecklist: React.FC<Props> = ({
                     removeSubitem={remove}
                     legendas={legendas}
                     onNovaLegendaClick={onNovaLegendaClick}
+                    watch={watch} // 🔥 adicionar isso
                 />
             ))}
 

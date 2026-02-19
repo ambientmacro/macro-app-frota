@@ -8,6 +8,7 @@ interface Props {
     removeSubitem: (index: number) => void;
     legendas: Legenda[];
     onNovaLegendaClick: () => void;
+    watch?: any;
 }
 
 const SubitemChecklist: React.FC<Props> = ({
@@ -16,75 +17,87 @@ const SubitemChecklist: React.FC<Props> = ({
     register,
     removeSubitem,
     legendas,
-    onNovaLegendaClick
+    onNovaLegendaClick,
+    watch
 }) => {
-    return (
-        <div className="card p-2 mb-2">
 
+    // 🔥 Pega a legenda selecionada
+    const legendaSelecionadaId = watch(`campos.${campoIndex}.subitens.${subIndex}.legendaId`);
+    const legendaSelecionada = legendas.find(l => l.id === legendaSelecionadaId);
+
+    return (
+        <div
+            className="card p-3 mb-3 shadow-sm"
+            style={{
+                borderLeft: `6px solid ${legendaSelecionada?.cor || "#ccc"}`,
+                transition: "0.2s"
+            }}
+        >
+            {/* TÍTULO */}
             <label className="form-label fw-bold">Título do subitem</label>
             <input
                 {...register(`campos.${campoIndex}.subitens.${subIndex}.titulo`, { required: true })}
-                className="form-control"
+                className="form-control mb-2"
                 placeholder="Ex: Os pneus estão em bom estado?"
             />
 
-            <div className="row mt-2">
-                <div className="col-md-4">
-                    <label className="form-label fw-bold">Legenda</label>
-                    <div className="d-flex">
-                        <select
-                            {...register(`campos.${campoIndex}.subitens.${subIndex}.legendaId`)}
-                            className="form-select me-2"
-                        >
-                            <option value="">Nenhuma</option>
-                            {legendas.map((l) => (
-                                <option key={l.id} value={l.id}>
-                                    {l.codigo}
-                                </option>
-                            ))}
-                        </select>
+            {/* LEGENDA */}
+            <label className="form-label fw-bold">Legenda</label>
+            <div className="d-flex gap-2 mb-2">
 
-                        <button
-                            type="button"
-                            className="btn btn-outline-primary"
-                            onClick={onNovaLegendaClick}
-                        >
-                            +
-                        </button>
-                    </div>
-                </div>
+                <select
+                    {...register(`campos.${campoIndex}.subitens.${subIndex}.legendaId`)}
+                    className="form-select"
+                >
+                    <option value="">Selecione...</option>
 
-                <div className="col-md-4">
-                    <div className="form-check mt-4">
-                        <input
-                            type="checkbox"
-                            {...register(`campos.${campoIndex}.subitens.${subIndex}.obrigatorio`)}
-                            className="form-check-input"
-                        />
-                        <label className="form-check-label">Obrigatório</label>
-                    </div>
+                    {legendas.map((l) => (
+                        <option key={l.id} value={l.id}>
+                            {l.codigo}
+                        </option>
+                    ))}
+                </select>
 
-                    <div className="form-check">
-                        <input
-                            type="checkbox"
-                            {...register(`campos.${campoIndex}.subitens.${subIndex}.critico`)}
-                            className="form-check-input"
-                        />
-                        <label className="form-check-label">Crítico</label>
-                    </div>
-                </div>
-
-                <div className="col-md-4 d-flex align-items-end justify-content-end">
-                    <button
-                        type="button"
-                        className="btn btn-danger"
-                        onClick={() => removeSubitem(subIndex)}
-                    >
-                        Remover
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={onNovaLegendaClick}
+                >
+                    +
+                </button>
             </div>
 
+            {/* CONFIGURAÇÕES */}
+            <div className="d-flex gap-4">
+
+                <div className="form-check">
+                    <input
+                        type="checkbox"
+                        {...register(`campos.${campoIndex}.subitens.${subIndex}.obrigatorio`)}
+                        className="form-check-input"
+                    />
+                    <label className="form-check-label">Obrigatório</label>
+                </div>
+
+                <div className="form-check">
+                    <input
+                        type="checkbox"
+                        {...register(`campos.${campoIndex}.subitens.${subIndex}.critico`)}
+                        className="form-check-input"
+                    />
+                    <label className="form-check-label">Crítico</label>
+                </div>
+
+            </div>
+
+            {/* REMOVER */}
+            <button
+                type="button"
+                className="btn btn-sm btn-danger mt-3"
+                onClick={() => removeSubitem(subIndex)}
+            >
+                Remover
+            </button>
         </div>
     );
 };
