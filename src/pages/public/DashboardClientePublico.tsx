@@ -14,14 +14,26 @@ const DashboardClientePublico = () => {
     {
       label: 'Abrir Check List',
       icon: <FaCheckCircle size={20} />,
-      onClick: () => navigate('/lancar-checklist'), // 🔥 CORRIGIDO
+      onClick: () => navigate('/lancar-checklist'),
+    },
+    {
+      label: 'Abrir Check List',
+      icon: <FaClock size={20} />,
+      onClick: () => navigate('/lancar-checklist'),
     },
     {
       label: 'Histórico de Checklist',
       icon: <FaClock size={20} />,
-      onClick: () => navigate('/minhas-solicitacoes'),
+      onClick: () => navigate('/historico-checklist'),
+    },
+    {
+      label: 'Lançar Jornada Trabalho',
+      icon: <FaClock size={20} />,
+      onClick: () => navigate('/lancar-ponto-jornada'),
     },
   ];
+
+
 
   return (
     <div
