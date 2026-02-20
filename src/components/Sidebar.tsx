@@ -10,7 +10,7 @@ import {
   FaUsers
 } from 'react-icons/fa';
 import { useUser } from '../contexts/UserContext';
-import { getAuth, signOut } from 'firebase/auth';
+import Swal from 'sweetalert2';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,18 +27,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   }, []);
 
   const location = useLocation();
-  const { setUser } = useUser();
+  const { logout } = useUser();
   const navigate = useNavigate();
-  const auth = getAuth();
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
-    navigate('/login');
-  };
-
+  // 🔥 Igual ao sidebar público: só fecha se for mobile
   const handleLinkClick = () => {
     if (window.innerWidth < 768) onClose();
+  };
+
+  // 🔥 Agora com confirmação de saída
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Tem certeza que deseja sair?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        navigate('/login');
+      }
+    });
   };
 
   const linkStyle = (path: string) => ({
@@ -78,37 +90,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         <nav style={{ padding: '0 1rem' }}>
 
-          {/* DASHBOARD */}
           <Link to="/dashboard" onClick={handleLinkClick} style={linkStyle('/dashboard')}>
             <FaHome style={{ marginRight: 10 }} /> Menu
           </Link>
 
-          {/* EMPRESAS */}
           <Link to="/admin/empresas" onClick={handleLinkClick} style={linkStyle('/admin/empresas')}>
             <FaBuilding style={{ marginRight: 10 }} /> Empresas
           </Link>
 
-          {/* FUNCIONÁRIOS — NOVO */}
           <Link to="/admin/funcionarios" onClick={handleLinkClick} style={linkStyle('/admin/funcionarios')}>
             <FaUsers style={{ marginRight: 10 }} /> Funcionários
           </Link>
 
-          {/* EQUIPAMENTOS */}
           <Link to="/admin/novo-equipamento" onClick={handleLinkClick} style={linkStyle('/admin/novo-equipamento')}>
             <FaTruck style={{ marginRight: 10 }} /> Novo Equipamento
           </Link>
 
-          {/* CHECKLIST */}
           <Link to="/admin/novo-checklist" onClick={handleLinkClick} style={linkStyle('/admin/novo-checklist')}>
             <FaClipboardCheck style={{ marginRight: 10 }} /> Criar Checklist
           </Link>
 
-          {/* RELACIONAR CHECKLIST */}
           <Link to="/admin/relacionar-checklist" onClick={handleLinkClick} style={linkStyle('/admin/relacionar-checklist')}>
             <FaTools style={{ marginRight: 10 }} /> Relacionar Checklist
           </Link>
 
-          {/* LEGENDAS */}
           <Link to="/legendas" onClick={handleLinkClick} style={linkStyle('/legendas')}>
             <FaTools style={{ marginRight: 10 }} /> Legendas
           </Link>
@@ -118,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       <div style={{ padding: '1rem' }}>
         <button
-          onClick={handleLogout}
+          onClick={handleLogout} // 🔥 Agora com SweetAlert
           style={{
             width: '100%',
             backgroundColor: '#dc3545',

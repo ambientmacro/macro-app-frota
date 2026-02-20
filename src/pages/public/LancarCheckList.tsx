@@ -152,6 +152,30 @@ const LancarCheckList: React.FC = () => {
             <div className="card shadow p-4">
                 <h2 className="text-primary mb-3">Lançar Checklist</h2>
 
+                {/* 🔥 INFORMAÇÕES DO FUNCIONÁRIO */}
+                <div
+                    className="mb-4 p-3"
+                    style={{
+                        backgroundColor: "#f8f9fa",
+                        borderRadius: "10px",
+                        border: "1px solid #ddd"
+                    }}
+                >
+                    <h5 className="text-primary mb-2">Funcionário Responsável:</h5>
+
+                    <p className="mb-1">
+                        <strong>Nome:</strong> {user?.displayName || "—"}
+                    </p>
+
+                    <p className="mb-1">
+                        <strong>Empresa:</strong> {user?.empresaNome || "—"}
+                    </p>
+
+                    <p className="mb-0">
+                        <strong>Função:</strong> {user?.funcao || "—"}
+                    </p>
+                </div>
+
                 {/* Seleção do veículo */}
                 <label className="form-label fw-bold">Selecione o veículo</label>
                 <select
@@ -262,6 +286,7 @@ const LancarCheckList: React.FC = () => {
             </div>
         </div>
     );
+
 };
 
 export default LancarCheckList;

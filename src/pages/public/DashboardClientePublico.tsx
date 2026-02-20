@@ -1,7 +1,9 @@
+import React from "react";
 import { useUser } from '../../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaClock, FaCheckCircle, FaSignOutAlt } from 'react-icons/fa';
+import Swal from "sweetalert2";
 import { colorBranco } from '../../values/colors';
 
 const colorAzulClaro = '#3498db';
@@ -9,6 +11,23 @@ const colorAzulClaro = '#3498db';
 const DashboardClientePublico = () => {
   const { user, logout } = useUser();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Tem certeza que deseja sair?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        navigate('/');
+      }
+    });
+  };
 
   const menuOptions = [
     {
@@ -33,8 +52,6 @@ const DashboardClientePublico = () => {
     },
   ];
 
-
-
   return (
     <div
       className="container mt-5"
@@ -46,17 +63,30 @@ const DashboardClientePublico = () => {
         maxWidth: '700px',
       }}
     >
+      {/* CABEÇALHO */}
       <h1
         style={{
           color: colorAzulClaro,
           fontSize: '26px',
           fontWeight: 'bold',
-          marginBottom: '30px',
+          marginBottom: '10px',
         }}
       >
-        👋 Olá, {user?.displayName || user?.email || 'Cliente'}!
+        👋 Olá, {user?.displayName || 'Cliente'}!
       </h1>
 
+      {/* EMPRESA E FUNÇÃO */}
+      <p style={{ margin: 0, fontSize: '16px', color: '#555' }}>
+        <strong>Empresa:</strong> {user?.empresaNome || '—'}
+      </p>
+
+      <p style={{ marginTop: '5px', fontSize: '16px', color: '#555' }}>
+        <strong>Função:</strong> {user?.funcao || '—'}
+      </p>
+
+      <hr style={{ margin: '20px 0' }} />
+
+      {/* MENU */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {menuOptions.map((option, index) => (
           <motion.button
@@ -81,8 +111,9 @@ const DashboardClientePublico = () => {
           </motion.button>
         ))}
 
+        {/* BOTÃO SAIR */}
         <motion.button
-          onClick={logout}
+          onClick={handleLogout}
           whileTap={{ scale: 0.95 }}
           style={{
             display: 'flex',

@@ -23,6 +23,11 @@ const PublicSidebar: React.FC<PublicSidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { logout } = useUser();
 
+  // 🔥 MESMA LÓGICA DO SIDEBAR ADMIN
+  const handleLinkClick = () => {
+    if (window.innerWidth < 768) onClose();
+  };
+
   const linkStyle = (path: string) => ({
     display: 'flex',
     alignItems: 'center',
@@ -86,30 +91,42 @@ const PublicSidebar: React.FC<PublicSidebarProps> = ({ isOpen, onClose }) => {
           <span style={{ color: '#ffc107' }}>Ambiental</span>
         </div>
 
-        {/* MENU PRINCIPAL */}
-        <Link to="/dashboard-cliente-publico" style={linkStyle('/dashboard-cliente-publico')}>
+        <Link
+          to="/dashboard-cliente-publico"
+          style={linkStyle('/dashboard-cliente-publico')}
+          onClick={handleLinkClick}
+        >
           <FiHome /> Menu
         </Link>
 
-        {/* Abrir Checklist */}
-        <Link to="/lancar-checklist" style={linkStyle('/lancar-checklist')}>
+        <Link
+          to="/lancar-checklist"
+          style={linkStyle('/lancar-checklist')}
+          onClick={handleLinkClick}
+        >
           <FiClock /> Abrir Check List
         </Link>
 
-        {/* Histórico */}
-        <Link to="/historico-checklist" style={linkStyle('/historico-checklist')}>
+        <Link
+          to="/historico-checklist"
+          style={linkStyle('/historico-checklist')}
+          onClick={handleLinkClick}
+        >
           <FiCalendar /> Histórico de Checklist
         </Link>
 
-        {/* Lançar Jornada Trabalho */}
-        <Link to="/lancar-ponto-jornada" style={linkStyle('/lancar-ponto-jornada')}>
+        <Link
+          to="/lancar-ponto-jornada"
+          style={linkStyle('/lancar-ponto-jornada')}
+          onClick={handleLinkClick}
+        >
           <FiCalendar /> Lançar Jornada Trabalho
         </Link>
       </nav>
 
       <div style={{ padding: '1rem' }}>
         <button
-          onClick={handleLogout}
+          onClick={handleLogout} // 🔥 NÃO FECHA O SIDEBAR
           style={{
             width: '100%',
             backgroundColor: '#dc3545',
@@ -121,6 +138,7 @@ const PublicSidebar: React.FC<PublicSidebarProps> = ({ isOpen, onClose }) => {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <FaSignOutAlt style={{ marginRight: '8px' }} /> Sair

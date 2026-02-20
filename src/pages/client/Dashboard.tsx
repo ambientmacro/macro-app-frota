@@ -9,11 +9,29 @@ import {
   FaSignOutAlt,
   FaUsers
 } from 'react-icons/fa';
+import Swal from "sweetalert2";
 import { colorAzul, colorBranco } from '../../values/colors';
 
 const Dashboard = () => {
   const { user, logout } = useUser();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Tem certeza que deseja sair?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        navigate('/');
+      }
+    });
+  };
 
   const menuOptions = [
     {
@@ -22,7 +40,7 @@ const Dashboard = () => {
       onClick: () => navigate('/admin/empresas'),
     },
     {
-      label: 'Funcionários',   // 🔥 NOVO
+      label: 'Funcionários',
       icon: <FaUsers size={22} />,
       onClick: () => navigate('/admin/funcionarios'),
     },
@@ -59,17 +77,30 @@ const Dashboard = () => {
         maxWidth: '700px',
       }}
     >
+      {/* CABEÇALHO */}
       <h1
         style={{
           color: colorAzul,
           fontSize: '26px',
           fontWeight: 'bold',
-          marginBottom: '30px',
+          marginBottom: '10px',
         }}
       >
-        👋 Bem-vindo, {user?.displayName || user?.email || 'Administrador'}!
+        👋 Bem-vindo, {user?.displayName || 'Administrador'}!
       </h1>
 
+      {/* EMPRESA E FUNÇÃO */}
+      <p style={{ margin: 0, fontSize: '16px', color: '#555' }}>
+        <strong>Empresa:</strong> {user?.empresaNome?.replace(/"/g, '') || '—'}
+      </p>
+
+      <p style={{ marginTop: '5px', fontSize: '16px', color: '#555' }}>
+        <strong>Função:</strong> {user?.funcao || '—'}
+      </p>
+
+      <hr style={{ margin: '20px 0' }} />
+
+      {/* MENU */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {menuOptions.map((option, index) => (
           <motion.button
@@ -94,8 +125,9 @@ const Dashboard = () => {
           </motion.button>
         ))}
 
+        {/* BOTÃO SAIR */}
         <motion.button
-          onClick={logout}
+          onClick={handleLogout}
           whileTap={{ scale: 0.95 }}
           style={{
             display: 'flex',
