@@ -12,6 +12,7 @@ interface EquipamentoForm {
     frota?: string;
     descricao?: string;
     origem: "proprio" | "alugado";
+    valor?: string;
 }
 
 interface Equipamento extends EquipamentoForm {
@@ -20,17 +21,42 @@ interface Equipamento extends EquipamentoForm {
 }
 
 const NovoEquipamento: React.FC = () => {
-    const { register, handleSubmit, reset, setValue, formState: { isSubmitting } } =
-        useForm<EquipamentoForm>({
-            defaultValues: {
-                nome: '',
-                tipo: '',
-                placa: '',
-                frota: '',
-                descricao: '',
-                origem: "proprio",
-            }
-        });
+
+    // 🔥 FORMULÁRIO PRINCIPAL (CADASTRO)
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { isSubmitting }
+    } = useForm<EquipamentoForm>({
+        defaultValues: {
+            nome: '',
+            tipo: '',
+            placa: '',
+            frota: '',
+            descricao: '',
+            origem: "proprio",
+            valor: ""
+        }
+    });
+
+    // 🔥 FORMULÁRIO DO MODAL (EDIÇÃO)
+    const {
+        register: registerEdit,
+        handleSubmit: handleSubmitEdit,
+        reset: resetEdit,
+        setValue: setValueEdit
+    } = useForm<EquipamentoForm>({
+        defaultValues: {
+            nome: '',
+            tipo: '',
+            placa: '',
+            frota: '',
+            descricao: '',
+            origem: "proprio",
+            valor: ""
+        }
+    });
 
     const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
     const [loading, setLoading] = useState(true);
@@ -88,7 +114,7 @@ const NovoEquipamento: React.FC = () => {
             Swal.fire('Sucesso!', 'Equipamento atualizado.', 'success');
             setShowModal(false);
             setEditandoId(null);
-            reset();
+            resetEdit();
             carregarEquipamentos();
         } catch (error) {
             console.error(error);
@@ -99,12 +125,16 @@ const NovoEquipamento: React.FC = () => {
     // Abrir modal de edição
     const editar = (eq: Equipamento) => {
         setEditandoId(eq.id);
-        setValue("nome", eq.nome);
-        setValue("tipo", eq.tipo);
-        setValue("placa", eq.placa || "");
-        setValue("frota", eq.frota || "");
-        setValue("descricao", eq.descricao || "");
-        setValue("origem", eq.origem);
+
+        // 🔥 Preenche SOMENTE o formulário do modal
+        setValueEdit("nome", eq.nome);
+        setValueEdit("tipo", eq.tipo);
+        setValueEdit("placa", eq.placa || "");
+        setValueEdit("frota", eq.frota || "");
+        setValueEdit("descricao", eq.descricao || "");
+        setValueEdit("origem", eq.origem);
+        setValueEdit("valor", eq.valor || "");
+
         setShowModal(true);
     };
 
@@ -142,6 +172,17 @@ const NovoEquipamento: React.FC = () => {
                             <option value="proprio">Próprio</option>
                             <option value="alugado">Alugado</option>
                         </select>
+                    </div>
+
+                    {/* CAMPO VALOR */}
+                    <div className="mb-3">
+                        <label className="form-label fw-bold">Valor (R$)</label>
+                        <input
+                            {...register("valor")}
+                            className="form-control form-control-lg"
+                            placeholder="Ex: 150.000,00"
+                            type="text"
+                        />
                     </div>
 
                     <div className="row mb-4">
@@ -211,7 +252,6 @@ const NovoEquipamento: React.FC = () => {
                         className="card p-2 mb-2 d-flex flex-row justify-content-between align-items-center"
                     >
                         <div>
-                            {/* Aqui eu poço estilizar os campos que vem para exibição */}
                             <strong>{eq.nome}</strong>
                             <div className="text-muted" style={{ fontSize: 12 }}>
                                 {eq.tipo}
@@ -227,12 +267,15 @@ const NovoEquipamento: React.FC = () => {
                                 {eq.placa && (
                                     <> • Placa {eq.placa}</>
                                 )}
+
+                                {eq.valor && (
+                                    <> • Valor R$ {eq.valor}</>
+                                )}
+
                                 {eq.descricao && (
                                     <> • Descrição {eq.descricao}</>
                                 )}
                             </div>
-
-
                         </div>
 
                         <div>
@@ -284,44 +327,55 @@ const NovoEquipamento: React.FC = () => {
                     >
                         <div className="modal-header p-3">
                             <h5 className="modal-title">Editar Equipamento</h5>
-                            <button className="btn-close" onClick={() => setShowModal(false)}></button>
+                            <button
+                                className="btn-close"
+                                onClick={() => {
+                                    resetEdit();
+                                    setShowModal(false);
+                                }}
+                            ></button>
                         </div>
 
                         <div className="modal-body p-3">
-                            <form onSubmit={handleSubmit(salvarEdicao)}>
+                            <form onSubmit={handleSubmitEdit(salvarEdicao)}>
 
                                 <div className="mb-3">
-                                    <label className="form-label fw-bold">Origem</label>
-                                    <select {...register("origem")} className="form-select">
+                                    <label className="form-label fw-bold">Tipo de contrato</label>
+                                    <select {...registerEdit("origem")} className="form-select">
                                         <option value="proprio">Próprio</option>
                                         <option value="alugado">Alugado</option>
                                     </select>
                                 </div>
 
                                 <div className="mb-3">
+                                    <label className="form-label fw-bold">Valor (R$)</label>
+                                    <input {...registerEdit("valor")} className="form-control" />
+                                </div>
+
+                                <div className="mb-3">
                                     <label className="form-label fw-bold">Nome</label>
-                                    <input {...register("nome")} className="form-control" />
+                                    <input {...registerEdit("nome")} className="form-control" />
                                 </div>
 
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Tipo</label>
-                                    <input {...register("tipo")} className="form-control" />
+                                    <input {...registerEdit("tipo")} className="form-control" />
                                 </div>
 
                                 <div className="row mb-3">
                                     <div className="col-md-4">
                                         <label className="form-label fw-bold">Placa</label>
-                                        <input {...register("placa")} className="form-control" />
+                                        <input {...registerEdit("placa")} className="form-control" />
                                     </div>
 
                                     <div className="col-md-4">
                                         <label className="form-label fw-bold">Frota</label>
-                                        <input {...register("frota")} className="form-control" />
+                                        <input {...registerEdit("frota")} className="form-control" />
                                     </div>
 
                                     <div className="col-md-4">
                                         <label className="form-label fw-bold">Descrição</label>
-                                        <input {...register("descricao")} className="form-control" />
+                                        <input {...registerEdit("descricao")} className="form-control" />
                                     </div>
                                 </div>
 
@@ -331,8 +385,6 @@ const NovoEquipamento: React.FC = () => {
                     </div>
                 </div>
             )}
-
-
 
         </div>
     );
