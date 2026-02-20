@@ -10,6 +10,9 @@ interface User {
   displayName: string | null;
   empresaNome?: string | null;
   funcao?: string | null;
+
+  // 🔥 ADICIONADO
+  equipamentoTitularId?: string | null;
 }
 
 interface UserContextType {
@@ -31,6 +34,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let nome: string | null = null;
         let empresaNome: string | null = null;
         let funcao: string | null = null;
+        let equipamentoTitularId: string | null = null;
 
         try {
           // 🔥 1) Buscar na coleção FUNCIONARIOS
@@ -47,6 +51,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             nome = dados.nome || null;
             empresaNome = dados.empresaNome || null;
             funcao = dados.funcao || null;
+
+            // 🔥 PEGAR O EQUIPAMENTO TITULAR
+            equipamentoTitularId = dados.equipamentoTitularId || null;
 
             console.log("🔥 Funcionário encontrado:", dados);
           } else {
@@ -67,6 +74,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               empresaNome = dadosCli.empresaNome || null;
               funcao = dadosCli.funcao || null;
 
+              // 🔥 Clientes não têm equipamento titular
+              equipamentoTitularId = null;
+
               console.log("🔥 Cliente encontrado:", dadosCli);
             } else {
               console.warn("⚠️ Usuário não encontrado em clientes também.");
@@ -76,12 +86,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.error("❌ Erro ao buscar dados do usuário:", error);
         }
 
+        // 🔥 SETAR O USUÁRIO COMPLETO
         setUser({
           email: firebaseUser.email,
           uid: firebaseUser.uid,
           displayName: nome,
           empresaNome,
           funcao,
+          equipamentoTitularId, // 🔥 AGORA EXISTE
         });
       } else {
         setUser(null);

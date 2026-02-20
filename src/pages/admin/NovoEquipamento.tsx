@@ -167,7 +167,7 @@ const NovoEquipamento: React.FC = () => {
                 <form onSubmit={handleSubmit(salvarEquipamento)}>
 
                     <div className="mb-3">
-                        <label className="form-label fw-bold">Origem</label>
+                        <label className="form-label fw-bold">Tipo de contrato</label>
                         <select {...register("origem")} className="form-select form-select-lg">
                             <option value="proprio">Próprio</option>
                             <option value="alugado">Alugado</option>

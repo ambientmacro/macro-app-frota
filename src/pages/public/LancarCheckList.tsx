@@ -79,6 +79,14 @@ const LancarCheckList: React.FC = () => {
         carregarEquipamentos();
     }, []);
 
+    // 🔥 Selecionar automaticamente o equipamento titular do funcionário
+    useEffect(() => {
+        if (equipamentos.length > 0 && user?.equipamentoTitularId) {
+            setEquipamentoSelecionado(user.equipamentoTitularId);
+            carregarChecklist(user.equipamentoTitularId);
+        }
+    }, [equipamentos, user]);
+
     // Atualizar respostas
     const atualizarResposta = (campoIndex: number, subIndex: number, valor: any) => {
         setRespostas((prev: any) => ({
@@ -97,9 +105,6 @@ const LancarCheckList: React.FC = () => {
             campo.subitens.forEach((sub, subIndex) => {
                 const key = `${campoIndex}-${subIndex}`;
 
-                // regra correta:
-                // 1) se o campo é obrigatório → todos os subitens devem ser respondidos
-                // 2) se o campo não é obrigatório → validar apenas subitens obrigatórios
                 const deveValidar =
                     campo.obrigatorio === true || sub.obrigatorio === true;
 
@@ -135,7 +140,7 @@ const LancarCheckList: React.FC = () => {
             checklistTitulo: checklist.titulo,
             respostas,
             data: Timestamp.now(),
-            motoristaId: user.uid // 🔥 AGORA ESTÁ AQUI!
+            motoristaId: user.uid
         };
 
         await addDoc(collection(db, "checklists_resolvidos"), payload);
@@ -286,7 +291,6 @@ const LancarCheckList: React.FC = () => {
             </div>
         </div>
     );
-
 };
 
 export default LancarCheckList;

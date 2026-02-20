@@ -16,12 +16,16 @@ import { Link } from "react-router-dom";
 const FuncionariosAdmin = () => {
     const [lista, setLista] = useState<any[]>([]);
     const [empresas, setEmpresas] = useState<any[]>([]);
+    const [equipamentos, setEquipamentos] = useState<any[]>([]);
+
     const [empresaSelecionada, setEmpresaSelecionada] = useState("");
 
     const [nome, setNome] = useState("");
     const [email, setEmail] = useState("");
     const [telefone, setTelefone] = useState("");
-    const [funcao, setFuncao] = useState("motorista");
+    const [funcao, setFuncao] = useState("Operador/Motorista");
+
+    const [equipamentoTitular, setEquipamentoTitular] = useState("");
 
     const [criarUsuario, setCriarUsuario] = useState(false);
     const [usuarioEmail, setUsuarioEmail] = useState("");
@@ -30,7 +34,6 @@ const FuncionariosAdmin = () => {
     const [filtroUsuario, setFiltroUsuario] = useState("todos");
     const [filtroAtivo, setFiltroAtivo] = useState("todos");
 
-    // Edição
     const [editando, setEditando] = useState<any | null>(null);
 
     const carregarFuncionarios = async () => {
@@ -47,6 +50,13 @@ const FuncionariosAdmin = () => {
         setEmpresas(arr);
 
         if (arr.length === 1) setEmpresaSelecionada(arr[0].id);
+    };
+
+    const carregarEquipamentos = async () => {
+        const snap = await getDocs(collection(db, "equipamentos"));
+        const arr: any[] = [];
+        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+        setEquipamentos(arr);
     };
 
     const validarEmailDuplicado = async (email: string) => {
@@ -109,9 +119,10 @@ const FuncionariosAdmin = () => {
             nome,
             email,
             telefone,
-            funcao,
+            funcao: "Operador/Motorista",
             empresaId: empresaSelecionada,
             empresaNome: empresa?.nome || "",
+            equipamentoTitularId: equipamentoTitular || null,
             ativo: true,
             criadoEm: new Date(),
 
@@ -125,11 +136,12 @@ const FuncionariosAdmin = () => {
         setNome("");
         setEmail("");
         setTelefone("");
-        setFuncao("motorista");
+        setFuncao("Operador/Motorista");
         setEmpresaSelecionada("");
         setCriarUsuario(false);
         setUsuarioEmail("");
         setUsuarioSenha("");
+        setEquipamentoTitular("");
 
         carregarFuncionarios();
     };
@@ -143,7 +155,8 @@ const FuncionariosAdmin = () => {
             nome: editando.nome,
             email: editando.email,
             telefone: editando.telefone,
-            funcao: editando.funcao,
+            funcao: "Operador/Motorista",
+            equipamentoTitularId: editando.equipamentoTitularId || null,
             ativo: editando.ativo,
         });
 
@@ -172,6 +185,7 @@ const FuncionariosAdmin = () => {
     useEffect(() => {
         carregarFuncionarios();
         carregarEmpresas();
+        carregarEquipamentos();
     }, []);
 
     const listaFiltrada = lista.filter((f) => {
@@ -229,10 +243,23 @@ const FuncionariosAdmin = () => {
                     <div className="col-md-4">
                         <label className="form-label">Função</label>
                         <select className="form-select" value={funcao} onChange={(e) => setFuncao(e.target.value)}>
-                            <option value="motorista">Motorista</option>
-                            <option value="operador">Operador</option>
-                            <option value="mecanico">Mecânico</option>
-                            <option value="administrativo">Administrativo</option>
+                            <option value="Operador/Motorista">Operador/Motorista</option>
+                        </select>
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label">Equipamento Titular</label>
+                        <select
+                            className="form-select"
+                            value={equipamentoTitular}
+                            onChange={(e) => setEquipamentoTitular(e.target.value)}
+                        >
+                            <option value="">Nenhum</option>
+                            {equipamentos.map((eq) => (
+                                <option key={eq.id} value={eq.id}>
+                                    {eq.nome} {eq.placa ? `• ${eq.placa}` : ""}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -304,6 +331,12 @@ const FuncionariosAdmin = () => {
                     <small>{f.email}</small>
                     <br />
                     <small>Empresa: {f.empresaNome}</small>
+                    <br />
+                    {f.equipamentoTitularId && (
+                        <small style={{ color: "blue" }}>
+                            Equipamento titular: {f.equipamentoTitularId}
+                        </small>
+                    )}
                     <br />
                     {f.criarUsuario ? (
                         <small style={{ color: "green" }}>Usuário criado: {f.usuarioEmail}</small>
@@ -381,10 +414,23 @@ const FuncionariosAdmin = () => {
                             value={editando.funcao}
                             onChange={(e) => setEditando({ ...editando, funcao: e.target.value })}
                         >
-                            <option value="motorista">Motorista</option>
-                            <option value="operador">Operador</option>
-                            <option value="mecanico">Mecânico</option>
-                            <option value="administrativo">Administrativo</option>
+                            <option value="Operador/Motorista">Operador/Motorista</option>
+                        </select>
+
+                        <label className="mt-2">Equipamento Titular</label>
+                        <select
+                            className="form-select"
+                            value={editando.equipamentoTitularId || ""}
+                            onChange={(e) =>
+                                setEditando({ ...editando, equipamentoTitularId: e.target.value })
+                            }
+                        >
+                            <option value="">Nenhum</option>
+                            {equipamentos.map((eq) => (
+                                <option key={eq.id} value={eq.id}>
+                                    {eq.nome} {eq.placa ? `• ${eq.placa}` : ""}
+                                </option>
+                            ))}
                         </select>
 
                         <div className="d-flex justify-content-between mt-4">
