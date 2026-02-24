@@ -45,11 +45,11 @@ const DashboardClientePublico = () => {
       icon: <FaClock size={20} />,
       onClick: () => navigate('/historico-checklist'),
     },
-    {
-      label: 'Lançar Jornada Trabalho',
-      icon: <FaClock size={20} />,
-      onClick: () => navigate('/lancar-ponto-jornada'),
-    },
+    // {
+    //   label: 'Lançar Jornada Trabalho',
+    //   icon: <FaClock size={20} />,
+    //   onClick: () => navigate('/lancar-ponto-jornada'),
+    // },
   ];
 
   return (
