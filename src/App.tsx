@@ -20,7 +20,7 @@ import LancarCheckList from "./pages/public/LancarCheckList";
 import HistoricoChecklist from "./pages/public/HistoricoChecklist";
 import VisualizarChecklist from "./pages/public/VisualizarChecklist";
 
-import LancarPontoJornada from "./pages/public/LancarPontoJornada";
+// import LancarPontoJornada from "./pages/public/LancarPontoJornada";
 
 // Páginas privadas (admin)
 import Dashboard from "./pages/client/Dashboard";
@@ -59,7 +59,7 @@ function AppRoutes() {
         <Route path="/lancar-checklist" element={<LancarCheckList />} />
         <Route path="/historico-checklist" element={<HistoricoChecklist />} />
         <Route path="/visualizar-checklist/:id" element={<VisualizarChecklist />} />
-        <Route path="/lancar-ponto-jornada" element={<LancarPontoJornada />} />
+        {/* <Route path="/lancar-ponto-jornada" element={<LancarPontoJornada />} /> */}
       </Route>
 
       {/* ROTAS PRIVADAS (ADMIN) */}

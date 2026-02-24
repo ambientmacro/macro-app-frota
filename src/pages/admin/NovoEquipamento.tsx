@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { db } from '../../firebaseConfig';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { FaSave, FaTruck, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaSave, FaTruck, FaEdit, FaTrash, FaClipboardList } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 interface EquipamentoForm {
@@ -238,7 +238,10 @@ const NovoEquipamento: React.FC = () => {
 
             {/* LISTAGEM */}
             <div className="card shadow p-4">
-                <h4 className="mb-3">Equipamentos Cadastrados</h4>
+                {/* <h4 className="mb-3">Equipamentos Cadastrados</h4> */}
+                <h2 className="mb-4 text-primary">
+                    <FaClipboardList className="me-2" /> Equipamentos Cadastrados / Veículo
+                </h2>
 
                 {loading && <p>Carregando...</p>}
 
