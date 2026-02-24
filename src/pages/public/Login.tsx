@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import { colorAzul, colorBranco } from '../../values/colors';
@@ -13,6 +13,8 @@ const Login = () => {
   const [senha, setSenha] = useState('123456');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [nome, setNome] = useState('');
+  const [lembrar, setLembrar] = useState(true); // 🔥 NOVO
+
   const { setUser } = useUser();
   const navigate = useNavigate();
 
@@ -32,31 +34,25 @@ const Login = () => {
     }
 
     try {
+      // 🔥 DEFINIR SE O USUÁRIO FICA LOGADO OU NÃO
+      await setPersistence(auth, lembrar ? browserLocalPersistence : browserSessionPersistence);
+
       if (isLogin) {
         const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+
         setUser({
           email: userCredential.user.email,
           uid: userCredential.user.uid,
           displayName: userCredential.user.displayName,
         });
-        // Swal.fire({
-        //   title: '🎉 Bem-vindo!',
-        //   text: `Que bom te ver por aqui, ${userCredential.user.email}! 🚀`,
-        //   icon: 'success',
-        //   confirmButtonText: 'Vamos lá!',
-        //   timer: 3500,
-        //   timerProgressBar: true,
-        //   showCancelButton: true,
-        //   cancelButtonText: 'Explorar primeiro',
-        //   background: '#f5f5f5',
-        // });
+
         navigate('/dashboard');
       } else {
         if (senha !== confirmarSenha) {
           Swal.fire({
             icon: 'error',
             title: '⚠️ Erro!',
-            text: 'As senhas não coincidem. Verifique e tente novamente.',
+            text: 'As senhas não coincidem.',
             confirmButtonText: 'OK',
           });
           return;
@@ -75,25 +71,21 @@ const Login = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
         const uid = userCredential.user.uid;
 
-        // Atualiza o contexto
-        setUser(
-          {
-            email: userCredential.user.email,
-            uid: uid,
-            displayName: userCredential.user.displayName,
-          }
-        );
+        setUser({
+          email: userCredential.user.email,
+          uid: uid,
+          displayName: nome,
+        });
 
-        // Salva os dados do cliente no Firestore usando o UID como ID do documento
         await setDoc(doc(db, 'clientes', uid), {
           nome,
           email,
-          endereco: '', // inicial vazio para ser editado depois
+          endereco: '',
         });
 
         Swal.fire({
           title: '🥳 Cadastro realizado!',
-          text: `Seja bem-vindo(a), ${nome}! Aproveite a melhor experiência 🚀`,
+          text: `Seja bem-vindo(a), ${nome}!`,
           icon: 'success',
           confirmButtonText: 'Vamos lá!',
           timer: 3500,
@@ -105,17 +97,11 @@ const Login = () => {
     } catch (error: any) {
       let mensagem = 'Erro ao autenticar.';
 
-      if (error.code === 'auth/email-already-in-use') {
-        mensagem = 'Este e-mail já está em uso. Tente fazer login ou use outro e-mail.';
-      } else if (error.code === 'auth/invalid-email') {
-        mensagem = 'O e-mail informado é inválido. Verifique e tente novamente.';
-      } else if (error.code === 'auth/weak-password') {
-        mensagem = 'A senha é muito fraca. Use pelo menos 6 caracteres.';
-      } else if (error.code === 'auth/user-not-found') {
-        mensagem = 'Usuário não encontrado. Verifique o e-mail ou cadastre-se.';
-      } else if (error.code === 'auth/wrong-password') {
-        mensagem = 'Senha incorreta. Tente novamente.';
-      }
+      if (error.code === 'auth/email-already-in-use') mensagem = 'Este e-mail já está em uso.';
+      if (error.code === 'auth/invalid-email') mensagem = 'E-mail inválido.';
+      if (error.code === 'auth/weak-password') mensagem = 'Senha muito fraca.';
+      if (error.code === 'auth/user-not-found') mensagem = 'Usuário não encontrado.';
+      if (error.code === 'auth/wrong-password') mensagem = 'Senha incorreta.';
 
       Swal.fire({
         icon: 'error',
@@ -146,68 +132,72 @@ const Login = () => {
         <h2 style={{ color: colorAzul, marginBottom: '10px', textAlign: 'center' }}>
           {isLogin ? 'Entrar' : 'Criar conta'}
         </h2>
-        <p style={{ color: '#777', textAlign: 'center', marginBottom: '30px' }}>
-          {isLogin
-            ? 'Faça login para acessar o painel'
-            : 'Preencha os campos abaixo para se cadastrar'}
-        </p>
 
         <form onSubmit={handleSubmit}>
+          {/* EMAIL */}
           <div className='mb-3'>
-            <label className='form-label' style={{ color: '#444' }}>E-mail</label>
+            <label className='form-label'>E-mail</label>
             <input
               type='email'
               className='form-control'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder='exemplo@dominio.com'
               required
-              style={{ padding: '10px', borderRadius: '8px' }}
             />
           </div>
 
+          {/* SENHA */}
           <div className='mb-3'>
-            <label className='form-label' style={{ color: '#444' }}>Senha</label>
+            <label className='form-label'>Senha</label>
             <input
               type='password'
               className='form-control'
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              placeholder='Digite sua senha'
               required
-              style={{ padding: '10px', borderRadius: '8px' }}
             />
           </div>
 
+          {/* CONFIRMAR SENHA */}
           {!isLogin && (
             <>
               <div className='mb-3'>
-                <label className='form-label' style={{ color: '#444' }}>Confirme sua senha</label>
+                <label className='form-label'>Confirme sua senha</label>
                 <input
                   type='password'
                   className='form-control'
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
-                  placeholder='Confirme sua senha'
                   required
-                  style={{ padding: '10px', borderRadius: '8px' }}
                 />
               </div>
 
               <div className='mb-3'>
-                <label className='form-label' style={{ color: '#444' }}>Seu nome</label>
+                <label className='form-label'>Seu nome</label>
                 <input
                   type='text'
                   className='form-control'
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  placeholder='Digite seu nome completo'
                   required
-                  style={{ padding: '10px', borderRadius: '8px' }}
                 />
               </div>
             </>
           )}
+
+          {/* 🔥 CHECKBOX LEMBRAR-ME */}
+          <div className="form-check mb-3">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={lembrar}
+              onChange={() => setLembrar(!lembrar)}
+              id="lembrarCheck"
+            />
+            <label className="form-check-label" htmlFor="lembrarCheck">
+              Manter-me conectado
+            </label>
+          </div>
 
           <button
             type='submit'
@@ -218,36 +208,11 @@ const Login = () => {
               padding: '12px',
               borderRadius: '10px',
               fontWeight: 'bold',
-              fontSize: '16px',
-              marginTop: '10px',
-              transition: '0.3s ease',
             }}
           >
             {isLogin ? 'Entrar' : 'Cadastrar'}
           </button>
         </form>
-
-        {/* TIRANDO A OPÇÃO DE SE CADASTRAR PUBLICAMENTE */}
-        {/* <div style={{ marginTop: '25px', textAlign: 'center' }}>
-          <span style={{ color: '#666' }}>
-            {isLogin ? 'Não tem uma conta?' : 'Já possui uma conta?'}
-          </span>
-          <br />
-          <button
-            onClick={handleToggle}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: colorAzul,
-              fontWeight: 'bold',
-              marginTop: '10px',
-              cursor: 'pointer',
-              fontSize: '15px',
-            }}
-          >
-            {isLogin ? 'Cadastre-se' : 'Fazer login'}
-          </button>
-        </div> */}
       </div>
     </div>
   );
