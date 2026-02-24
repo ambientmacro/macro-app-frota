@@ -111,7 +111,6 @@ const CampoChecklist: React.FC<Props> = ({
                                         className="d-flex align-items-center justify-content-between border p-2 mb-2 rounded"
                                     >
                                         <span>{op}</span>
-
                                         <button
                                             type="button"
                                             className="btn btn-sm btn-danger"

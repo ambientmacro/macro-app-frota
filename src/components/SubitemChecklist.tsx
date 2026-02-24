@@ -34,7 +34,7 @@ const SubitemChecklist: React.FC<Props> = ({
             }}
         >
             {/* TÍTULO */}
-            <label className="form-label fw-bold">Título do subitem</label>
+            <label className="form-label fw-bold">Título do subitem - {subIndex+1}</label> 
             <input
                 {...register(`campos.${campoIndex}.subitens.${subIndex}.titulo`, { required: true })}
                 className="form-control mb-2"
