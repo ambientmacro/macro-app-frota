@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import Swal from "sweetalert2";
 import CampoChecklist from "../../components/CampoChecklist";
@@ -8,7 +8,7 @@ import LegendaModal from "../../components/LegendaModal";
 import { Legenda } from "../../types/legendaTypes";
 import { db } from "../../firebaseConfig";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaFileImport } from "react-icons/fa";
 
 const NovoCheckList: React.FC = () => {
   const { legendas, adicionar } = useLegendas();
@@ -16,6 +16,8 @@ const NovoCheckList: React.FC = () => {
   const [checklists, setChecklists] = useState<(ChecklistForm & { id: string })[]>([]);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [showLegendaModal, setShowLegendaModal] = useState(false);
+
+  const inputCSVRef = useRef<HTMLInputElement | null>(null);
 
   const { register, control, handleSubmit, watch, reset, setValue } =
     useForm<ChecklistForm>({
@@ -66,6 +68,104 @@ const NovoCheckList: React.FC = () => {
         subitens: campo.subitens || []
       }))
     };
+  };
+
+  // 🔥 IMPORTAÇÃO CSV — AGORA 100% CORRETA
+  const importarCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const texto = event.target?.result as string;
+
+      const linhas = texto
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+
+      if (linhas.length === 0) {
+        Swal.fire("Erro", "Arquivo CSV vazio.", "error");
+        return;
+      }
+
+      const primeiraLinha = linhas[0].toLowerCase();
+
+      const temCabecalho =
+        primeiraLinha.includes("titulo") &&
+        primeiraLinha.includes("codigo") &&
+        primeiraLinha.includes("subitens");
+
+      const cabecalho = temCabecalho
+        ? linhas[0].split(";").map((c) => c.replace(/"/g, "").trim().toLowerCase())
+        : ["titulo", "codigo", "critico", "obrigatorio", "opcoes", "legendaid", "subitens"];
+
+      const linhaDados = temCabecalho ? linhas[1] : linhas[0];
+
+      if (!linhaDados) {
+        Swal.fire("Erro", "CSV não contém dados.", "error");
+        return;
+      }
+
+      const partes = linhaDados.split(";").map((p) => p.replace(/"/g, "").trim());
+
+      if (partes.length < 7) {
+        Swal.fire("Erro", "CSV incompleto. Verifique as colunas.", "error");
+        return;
+      }
+
+      const registro: Record<string, string> = {};
+      cabecalho.forEach((col, idx) => {
+        registro[col] = partes[idx] ?? "";
+      });
+
+      const titulo = registro["titulo"] || "";
+      const codigo = registro["codigo"] || "";
+      const critico = (registro["critico"] || "false").toLowerCase() === "true";
+      const obrigatorio = (registro["obrigatorio"] || "false").toLowerCase() === "true";
+      const legendaId = registro["legendaid"] || "VM";
+
+      const opcoesArray = (registro["opcoes"] || "")
+        .split("|")
+        .map((o) => o.trim())
+        .filter(Boolean);
+
+      const subitens = (registro["subitens"] || "")
+        .split("|")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => ({
+          titulo: s,
+          critico,
+          obrigatorio,
+          legendaId
+        }));
+
+      if (!titulo || subitens.length === 0) {
+        Swal.fire("Erro", "CSV não contém título ou subitens válidos.", "error");
+        return;
+      }
+
+      reset({
+        titulo,
+        codigo,
+        campos: [
+          {
+            titulo,
+            tipo: "lista",
+            obrigatorio,
+            critico,
+            opcoes: opcoesArray,
+            subitens
+          }
+        ]
+      });
+
+      Swal.fire("Sucesso!", "Checklist importado para o formulário!", "success");
+    };
+
+    reader.readAsText(file, "UTF-8");
   };
 
   // Salvar novo checklist
@@ -148,7 +248,7 @@ const NovoCheckList: React.FC = () => {
     setEditandoId(cl.id);
   };
 
-  // Limpar formulário e voltar ao modo criação
+  // Limpar formulário
   const limparFormulario = () => {
     reset({
       titulo: "",
@@ -183,9 +283,28 @@ const NovoCheckList: React.FC = () => {
     <div className="container mt-4 mb-5">
       <div className="card shadow p-4">
 
-        <h2 className="text-primary mb-3">
-          {editandoId ? "Editar Checklist" : "Criar Novo Checklist"}
-        </h2>
+        <div className="d-flex justify-content-between align-items-center">
+          <h2 className="text-primary mb-3">
+            {editandoId ? "Editar Checklist" : "Criar Novo Checklist"}
+          </h2>
+
+          {/* 🔥 BOTÃO IMPORTAR CSV */}
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => inputCSVRef.current?.click()}
+          >
+            <FaFileImport className="me-2" />
+            Importar CSV
+          </button>
+
+          <input
+            type="file"
+            accept=".csv"
+            ref={inputCSVRef}
+            style={{ display: "none" }}
+            onChange={importarCSV}
+          />
+        </div>
 
         <form onSubmit={handleSubmit(editandoId ? salvarEdicao : salvarNovo)}>
 
@@ -225,7 +344,7 @@ const NovoCheckList: React.FC = () => {
             onClick={() =>
               appendCampo({
                 titulo: "",
-                tipo: "lista", // <---- Definindo o padrão de carregamento da caixa de seleção!
+                tipo: "lista",
                 obrigatorio: false,
                 critico: false,
                 opcoes: [],
