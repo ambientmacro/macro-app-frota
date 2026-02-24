@@ -227,7 +227,8 @@ const Login = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '25px', textAlign: 'center' }}>
+        {/* TIRANDO A OPÇÃO DE SE CADASTRAR PUBLICAMENTE */}
+        {/* <div style={{ marginTop: '25px', textAlign: 'center' }}>
           <span style={{ color: '#666' }}>
             {isLogin ? 'Não tem uma conta?' : 'Já possui uma conta?'}
           </span>
@@ -246,7 +247,7 @@ const Login = () => {
           >
             {isLogin ? 'Cadastre-se' : 'Fazer login'}
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
