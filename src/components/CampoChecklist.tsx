@@ -30,14 +30,12 @@ const CampoChecklist: React.FC<Props> = ({
         name: `campos.${campoIndex}.subitens`
     });
 
-    // Agora o tipo SEMPRE vem como "lista" porque o append() no componente pai já define isso
     const tipo = watch(`campos.${campoIndex}.tipo`) || "lista";
     const opcoes = watch(`campos.${campoIndex}.opcoes`) || [];
 
     return (
         <div className="card border-primary p-3 mb-4">
 
-            {/* HEADER */}
             <div className="d-flex justify-content-between align-items-center">
                 <h5 className="text-primary">Campo {campoIndex + 1}</h5>
                 <button
@@ -49,7 +47,6 @@ const CampoChecklist: React.FC<Props> = ({
                 </button>
             </div>
 
-            {/* TÍTULO */}
             <label className="form-label fw-bold mt-2">Título do campo</label>
             <input
                 {...register(`campos.${campoIndex}.titulo`, { required: true })}
@@ -57,7 +54,6 @@ const CampoChecklist: React.FC<Props> = ({
                 placeholder="Ex: Verificação dos pneus"
             />
 
-            {/* TIPO */}
             <div className="row">
                 <div className="col-md-4">
                     <label className="form-label fw-bold">Tipo do campo</label>
@@ -65,13 +61,12 @@ const CampoChecklist: React.FC<Props> = ({
                     <select
                         {...register(`campos.${campoIndex}.tipo`)}
                         className="form-select"
-                        defaultValue="lista"   // 🔥 garante fallback visual
+                        defaultValue="lista"
                     >
                         <option value="lista">Lista</option>
                     </select>
                 </div>
 
-                {/* CONFIGURAÇÕES */}
                 <div className="col-md-4">
                     <label className="form-label fw-bold">Configurações</label>
 
@@ -95,41 +90,34 @@ const CampoChecklist: React.FC<Props> = ({
                 </div>
             </div>
 
-            {/* MINI-CRUD DO TIPO LISTA */}
             {tipo === "lista" && (
                 <div className="mt-3">
 
-                    <div className="mt-3">
+                    <label className="form-label fw-bold">Opções da lista do Motorista</label>
 
-                        <label className="form-label fw-bold">Opções da lista do Motorista</label>
-
-                        <div className="mb-3">
-                            {opcoes.length > 0 ? (
-                                opcoes.map((op: string, opIndex: number) => (
-                                    <div
-                                        key={opIndex}
-                                        className="d-flex align-items-center justify-content-between border p-2 mb-2 rounded"
+                    <div className="mb-3">
+                        {opcoes.length > 0 ? (
+                            opcoes.map((op: string, opIndex: number) => (
+                                <div
+                                    key={opIndex}
+                                    className="d-flex align-items-center justify-content-between border p-2 mb-2 rounded"
+                                >
+                                    <span>{op}</span>
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-danger"
+                                        onClick={() => {
+                                            const novaLista = opcoes.filter((_: any, i: number) => i !== opIndex);
+                                            setValue(`campos.${campoIndex}.opcoes`, novaLista);
+                                        }}
                                     >
-                                        <span>{op}</span>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-danger"
-                                            onClick={() => {
-                                                const novaLista = opcoes.filter((_: any, i: number) => i !== opIndex);
-                                                setValue(`campos.${campoIndex}.opcoes`, novaLista);
-                                            }}
-                                        >
-                                            Remover
-                                        </button>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-muted">Nenhuma opção adicionada ainda. Adicione no campo abaixo as opções que o motorista terá para selecionar os campos de subitens.</p>
-                            )}
-                        </div>
-
-
-
+                                        Remover
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-muted">Nenhuma opção adicionada ainda.</p>
+                        )}
                     </div>
 
                     <div className="d-flex">
@@ -160,7 +148,6 @@ const CampoChecklist: React.FC<Props> = ({
                 </div>
             )}
 
-            {/* SUBITENS */}
             <h6 className="mt-4">Subitens</h6>
 
             {subitens.map((sub, subIndex) => (
@@ -172,7 +159,7 @@ const CampoChecklist: React.FC<Props> = ({
                     removeSubitem={remove}
                     legendas={legendas}
                     onNovaLegendaClick={onNovaLegendaClick}
-                    watch={watch} // 🔥 adicionar isso
+                    watch={watch}
                 />
             ))}
 

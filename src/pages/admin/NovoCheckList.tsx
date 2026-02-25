@@ -35,7 +35,6 @@ const NovoCheckList: React.FC = () => {
 
   const camposWatch = watch("campos") || [];
 
-  // Carregar checklists existentes
   const carregarChecklists = async () => {
     const snap = await getDocs(collection(db, "templates_checklist"));
     const lista: any[] = [];
@@ -54,14 +53,13 @@ const NovoCheckList: React.FC = () => {
     carregarChecklists();
   }, []);
 
-  // Normalizar checklist vindo do Firestore
   const normalizarChecklist = (cl: ChecklistForm): ChecklistForm => {
     return {
       titulo: cl.titulo || "",
       codigo: cl.codigo || "",
       campos: (cl.campos || []).map((campo) => ({
         titulo: campo.titulo || "",
-        tipo: campo.tipo || "texto",
+        tipo: campo.tipo || "lista",
         obrigatorio: campo.obrigatorio ?? false,
         critico: campo.critico ?? false,
         opcoes: campo.opcoes || [],
@@ -69,8 +67,6 @@ const NovoCheckList: React.FC = () => {
       }))
     };
   };
-
-  // 🔥 IMPORTAÇÃO CSV — FORMATO A (1 SUBITEM POR LINHA)
   const importarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,6 +103,7 @@ const NovoCheckList: React.FC = () => {
 
         const titulo = registro["titulo"];
         const codigo = registro["codigo"];
+        const campo = registro["campo"];
         const subitem = registro["subitem"];
         const legenda = registro["legenda"];
         const obrigatorio = registro["obrigatorio"] === "true";
@@ -115,37 +112,49 @@ const NovoCheckList: React.FC = () => {
         tituloChecklist = titulo;
         codigoChecklist = codigo;
 
-        // Buscar legenda no Firestore pelo campo CORRETO: codigo
         const legendaEncontrada = legendas.find((l) => l.codigo === legenda);
 
-        // Se achar, usa o ID do Firestore
-        // Se não achar, salva o texto mesmo (mas isso não deve acontecer)
         subitens.push({
+          campo,
           titulo: subitem,
           legendaId: legendaEncontrada ? legendaEncontrada.id : legenda,
           obrigatorio,
           critico
         });
-
       }
+
+      // AGRUPAR POR CAMPO
+      const camposAgrupados: Record<string, any[]> = {};
+
+      subitens.forEach((s) => {
+        if (!camposAgrupados[s.campo]) {
+          camposAgrupados[s.campo] = [];
+        }
+        camposAgrupados[s.campo].push({
+          titulo: s.titulo,
+          legendaId: s.legendaId,
+          obrigatorio: s.obrigatorio,
+          critico: s.critico
+        });
+      });
+
+      const camposFinal = Object.keys(camposAgrupados).map((campoNome) => ({
+        titulo: campoNome,
+        tipo: "lista",
+        obrigatorio: false,
+        critico: false,
+        opcoes: [
+          "C - CONFORME",
+          "NC - NÃO CONFORME",
+          "NA - NÃO APLICÁVEL"
+        ],
+        subitens: camposAgrupados[campoNome]
+      }));
 
       reset({
         titulo: tituloChecklist,
         codigo: codigoChecklist,
-        campos: [
-          {
-            titulo: tituloChecklist,
-            tipo: "lista",
-            obrigatorio: false,
-            critico: false,
-            opcoes: [
-              "C - CONFORME",
-              "NC - NÃO CONFORME",
-              "NA - NÃO APLICÁVEL"
-            ],
-            subitens
-          }
-        ]
+        campos: camposFinal
       });
 
       Swal.fire("Sucesso!", "Checklist importado com sucesso!", "success");
@@ -153,8 +162,6 @@ const NovoCheckList: React.FC = () => {
 
     reader.readAsText(file, "UTF-8");
   };
-
-  // Salvar novo checklist
   const salvarNovo = async (data: ChecklistForm) => {
     if (data.campos.length === 0) {
       Swal.fire("Atenção", "Adicione pelo menos um campo.", "warning");
@@ -194,7 +201,6 @@ const NovoCheckList: React.FC = () => {
     }
   };
 
-  // Salvar edição
   const salvarEdicao = async (data: ChecklistForm) => {
     if (!editandoId) return;
 
@@ -227,24 +233,12 @@ const NovoCheckList: React.FC = () => {
     }
   };
 
-  // Preencher formulário para edição
   const editarChecklist = (cl: ChecklistForm & { id: string }) => {
     const normalizado = normalizarChecklist(cl);
     reset(normalizado);
     setEditandoId(cl.id);
   };
 
-  // Limpar formulário
-  const limparFormulario = () => {
-    reset({
-      titulo: "",
-      codigo: "",
-      campos: []
-    });
-    setEditandoId(null);
-  };
-
-  // Excluir checklist
   const excluirChecklist = async (id: string) => {
     const confirm = await Swal.fire({
       title: "Excluir checklist?",
@@ -260,7 +254,6 @@ const NovoCheckList: React.FC = () => {
     await deleteDoc(doc(db, "templates_checklist", id));
     carregarChecklists();
   };
-
   const salvarLegendaInline = async (data: Omit<Legenda, "id">) => {
     await adicionar(data);
   };
@@ -274,7 +267,6 @@ const NovoCheckList: React.FC = () => {
             {editandoId ? "Editar Checklist" : "Criar Novo Checklist"}
           </h2>
 
-          {/* 🔥 BOTÃO IMPORTAR CSV */}
           <button
             className="btn btn-outline-secondary"
             onClick={() => inputCSVRef.current?.click()}
@@ -346,7 +338,9 @@ const NovoCheckList: React.FC = () => {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={limparFormulario}
+                onClick={() =>
+                  reset({ titulo: "", codigo: "", campos: [] })
+                }
               >
                 Limpar formulário
               </button>
@@ -370,9 +364,9 @@ const NovoCheckList: React.FC = () => {
         />
       </div>
 
-      {/* LISTAGEM */}
       <div className="card shadow p-4 mt-4">
-        <h4 className="mb-3">Checklists Criados</h4>
+        {/* <h4 className="mb-3">Checklists Criados</h4> */}
+        <h2 className="text-primary mb-3">Checklists Criados</h2>
 
         {checklists.length === 0 && (
           <p className="text-muted">Nenhum checklist criado ainda.</p>

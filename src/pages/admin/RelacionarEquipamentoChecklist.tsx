@@ -223,8 +223,9 @@ const RelacionarEquipamentoChecklist: React.FC = () => {
                                 Salvar relação
                             </button>
                         </div>
-
-                        <h4 className="mt-4 mb-3">Relações existentes</h4>
+                        
+                        <h2 className="text-primary mb-3">Relações existentes</h2>
+                        {/* <h4 className="mt-4 mb-3">Relações existentes</h4> */}
 
                         {equipamentosComRelacao.length === 0 && (
                             <p className="text-muted">Nenhum relacionamento cadastrado.</p>

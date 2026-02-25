@@ -119,7 +119,8 @@ const EmpresasAdmin: React.FC = () => {
                     </div>
                 </form>
 
-                <h5 className="mb-3">Empresas cadastradas</h5>
+                {/* <h4 className="mb-3">Empresas cadastradas</h4> */}
+                <h2 className="text-primary mb-3">Empresas cadastradas</h2>
 
                 {loading && <p>Carregando...</p>}
 

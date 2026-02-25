@@ -200,11 +200,12 @@ const FuncionariosAdmin = () => {
 
     return (
         <div className="container mt-4">
-            <h2 className="text-primary mb-3">Cadastro de Funcionários</h2>
+            <h1 className="text-primary mb-3">Funcionários</h1>
 
             {/* FORMULÁRIO */}
             <div className="card p-4 mb-4">
-                <h5>Novo Funcionário</h5>
+                {/* <h5>Novo Funcionário</h5> */}
+                <h2 className="text-primary mb-3">Novo Funcionário</h2>
 
                 <div className="row mt-3">
                     <div className="col-md-4">
@@ -303,60 +304,68 @@ const FuncionariosAdmin = () => {
             </div>
 
             {/* FILTROS */}
-            <div className="row mb-3">
-                <div className="col-md-3">
-                    <label>Filtro por usuário:</label>
-                    <select className="form-select" value={filtroUsuario} onChange={(e) => setFiltroUsuario(e.target.value)}>
-                        <option value="todos">Todos</option>
-                        <option value="com">Com usuário</option>
-                        <option value="sem">Sem usuário</option>
-                    </select>
-                </div>
 
-                <div className="col-md-3">
-                    <label>Filtro por status:</label>
-                    <select className="form-select" value={filtroAtivo} onChange={(e) => setFiltroAtivo(e.target.value)}>
-                        <option value="todos">Todos</option>
-                        <option value="ativos">Ativos</option>
-                        <option value="inativos">Inativos</option>
-                    </select>
-                </div>
-            </div>
+            <div className="card p-4 mb-4">
+                {/* <h5>Novo Funcionário</h5> */}
+                <h2 className="text-primary mb-3">Listar</h2>
 
-            {/* LISTAGEM */}
-            {listaFiltrada.map((f) => (
-                <div key={f.id} className="card p-3 mb-2">
-                    <strong>{f.nome}</strong> — {f.funcao}
-                    <br />
-                    <small>{f.email}</small>
-                    <br />
-                    <small>Empresa: {f.empresaNome}</small>
-                    <br />
-                    {f.equipamentoTitularId && (
-                        <small style={{ color: "blue" }}>
-                            Equipamento titular: {f.equipamentoTitularId}
-                        </small>
-                    )}
-                    <br />
-                    {f.criarUsuario ? (
-                        <small style={{ color: "green" }}>Usuário criado: {f.usuarioEmail}</small>
-                    ) : (
-                        <small style={{ color: "red" }}>Sem usuário</small>
-                    )}
-                    <br />
-                    <small>Status: {f.ativo ? "Ativo" : "Inativo"}</small>
+                <div className="row mb-3">
+                    <div className="col-md-3">
+                        {/* <label>Filtro por usuário:</label> */}
+                        <h5>Filtro por usuário:</h5>
+                        <select className="form-select" value={filtroUsuario} onChange={(e) => setFiltroUsuario(e.target.value)}>
+                            <option value="todos">Todos</option>
+                            <option value="com">Com usuário</option>
+                            <option value="sem">Sem usuário</option>
+                        </select>
+                    </div>
 
-                    <div className="mt-2">
-                        <button className="btn btn-primary btn-sm me-2" onClick={() => setEditando(f)}>
-                            Editar
-                        </button>
-
-                        <button className="btn btn-warning btn-sm" onClick={() => ativarDesativar(f)}>
-                            {f.ativo ? "Desativar" : "Ativar"}
-                        </button>
+                    <div className="col-md-3">
+                        <label>Filtro por status:</label>
+                        <select className="form-select" value={filtroAtivo} onChange={(e) => setFiltroAtivo(e.target.value)}>
+                            <option value="todos">Todos</option>
+                            <option value="ativos">Ativos</option>
+                            <option value="inativos">Inativos</option>
+                        </select>
                     </div>
                 </div>
-            ))}
+
+                {/* LISTAGEM */}
+                {listaFiltrada.map((f) => (
+                    <div key={f.id} className="card p-3 mb-2">
+                        <strong>{f.nome}</strong> — {f.funcao}
+                        <br />
+                        <small>{f.email}</small>
+                        <br />
+                        <small>Empresa: {f.empresaNome}</small>
+                        <br />
+                        {f.equipamentoTitularId && (
+                            <small style={{ color: "blue" }}>
+                                Equipamento titular: {f.equipamentoTitularId}
+                            </small>
+                        )}
+                        <br />
+                        {f.criarUsuario ? (
+                            <small style={{ color: "green" }}>Usuário criado: {f.usuarioEmail}</small>
+                        ) : (
+                            <small style={{ color: "red" }}>Sem usuário</small>
+                        )}
+                        <br />
+                        <small>Status: {f.ativo ? "Ativo" : "Inativo"}</small>
+
+                        <div className="mt-2">
+                            <button className="btn btn-primary btn-sm me-2" onClick={() => setEditando(f)}>
+                                Editar
+                            </button>
+
+                            <button className="btn btn-warning btn-sm" onClick={() => ativarDesativar(f)}>
+                                {f.ativo ? "Desativar" : "Ativar"}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+
+            </div>
 
             {/* MODAL DE EDIÇÃO */}
             {editando && (
