@@ -70,14 +70,14 @@ const NovoCheckList: React.FC = () => {
     };
   };
 
-  // 🔥 IMPORTAÇÃO CSV — AGORA 100% CORRETA
-  const importarCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 🔥 IMPORTAÇÃO CSV — FORMATO A (1 SUBITEM POR LINHA)
+  const importarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
 
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const texto = event.target?.result as string;
 
       const linhas = texto
@@ -85,84 +85,70 @@ const NovoCheckList: React.FC = () => {
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
-      if (linhas.length === 0) {
-        Swal.fire("Erro", "Arquivo CSV vazio.", "error");
+      if (linhas.length < 2) {
+        Swal.fire("Erro", "CSV vazio ou incompleto.", "error");
         return;
       }
 
-      const primeiraLinha = linhas[0].toLowerCase();
+      const cabecalho = linhas[0].split(";").map((c) => c.trim().toLowerCase());
+      const dados = linhas.slice(1);
 
-      const temCabecalho =
-        primeiraLinha.includes("titulo") &&
-        primeiraLinha.includes("codigo") &&
-        primeiraLinha.includes("subitens");
+      const subitens: any[] = [];
+      let tituloChecklist = "";
+      let codigoChecklist = "";
 
-      const cabecalho = temCabecalho
-        ? linhas[0].split(";").map((c) => c.replace(/"/g, "").trim().toLowerCase())
-        : ["titulo", "codigo", "critico", "obrigatorio", "opcoes", "legendaid", "subitens"];
+      for (const linha of dados) {
+        const partes = linha.split(";").map((p) => p.replace(/"/g, "").trim());
 
-      const linhaDados = temCabecalho ? linhas[1] : linhas[0];
+        const registro: Record<string, string> = {};
+        cabecalho.forEach((col, idx) => {
+          registro[col] = partes[idx] ?? "";
+        });
 
-      if (!linhaDados) {
-        Swal.fire("Erro", "CSV não contém dados.", "error");
-        return;
-      }
+        const titulo = registro["titulo"];
+        const codigo = registro["codigo"];
+        const subitem = registro["subitem"];
+        const legenda = registro["legenda"];
+        const obrigatorio = registro["obrigatorio"] === "true";
+        const critico = registro["critico"] === "true";
 
-      const partes = linhaDados.split(";").map((p) => p.replace(/"/g, "").trim());
+        tituloChecklist = titulo;
+        codigoChecklist = codigo;
 
-      if (partes.length < 7) {
-        Swal.fire("Erro", "CSV incompleto. Verifique as colunas.", "error");
-        return;
-      }
+        // Buscar legenda no Firestore pelo campo CORRETO: codigo
+        const legendaEncontrada = legendas.find((l) => l.codigo === legenda);
 
-      const registro: Record<string, string> = {};
-      cabecalho.forEach((col, idx) => {
-        registro[col] = partes[idx] ?? "";
-      });
-
-      const titulo = registro["titulo"] || "";
-      const codigo = registro["codigo"] || "";
-      const critico = (registro["critico"] || "false").toLowerCase() === "true";
-      const obrigatorio = (registro["obrigatorio"] || "false").toLowerCase() === "true";
-      const legendaId = registro["legendaid"] || "VM";
-
-      const opcoesArray = (registro["opcoes"] || "")
-        .split("|")
-        .map((o) => o.trim())
-        .filter(Boolean);
-
-      const subitens = (registro["subitens"] || "")
-        .split("|")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((s) => ({
-          titulo: s,
-          critico,
+        // Se achar, usa o ID do Firestore
+        // Se não achar, salva o texto mesmo (mas isso não deve acontecer)
+        subitens.push({
+          titulo: subitem,
+          legendaId: legendaEncontrada ? legendaEncontrada.id : legenda,
           obrigatorio,
-          legendaId
-        }));
+          critico
+        });
 
-      if (!titulo || subitens.length === 0) {
-        Swal.fire("Erro", "CSV não contém título ou subitens válidos.", "error");
-        return;
       }
 
       reset({
-        titulo,
-        codigo,
+        titulo: tituloChecklist,
+        codigo: codigoChecklist,
         campos: [
           {
-            titulo,
+            titulo: tituloChecklist,
             tipo: "lista",
-            obrigatorio,
-            critico,
-            opcoes: opcoesArray,
+            obrigatorio: false,
+            critico: false,
+            opcoes: [
+              "C - CONFORME",
+              "NC - NÃO CONFORME",
+              "NA - NÃO APLICÁVEL"
+            ],
             subitens
           }
         ]
       });
 
-      Swal.fire("Sucesso!", "Checklist importado para o formulário!", "success");
+      Swal.fire("Sucesso!", "Checklist importado com sucesso!", "success");
     };
 
     reader.readAsText(file, "UTF-8");
