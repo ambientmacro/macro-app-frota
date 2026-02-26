@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </Link>
 
           <Link to="/admin/relacionar-checklist" onClick={handleLinkClick} style={linkStyle('/admin/relacionar-checklist')}>
-            <FaTools style={{ marginRight: 10 }} /> Relacionar Checklist
+            <FaTools style={{ marginRight: 10 }} /> Relacionar Checklist ao Equipamento
           </Link>
 
           <Link to="/legendas" onClick={handleLinkClick} style={linkStyle('/legendas')}>

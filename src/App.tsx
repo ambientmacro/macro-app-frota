@@ -29,6 +29,8 @@ import NovoEquipamento from "./pages/admin/NovoEquipamento";
 import NovoCheckList from "./pages/admin/NovoCheckList";
 import RelacionarEquipamentoChecklist from "./pages/admin/RelacionarEquipamentoChecklist";
 import LegendasAdmin from "./pages/admin/LegendasAdmin";
+import RespostasChecklist from "./pages/admin/RespostasChecklist";
+
 import FuncionariosAdmin from "./pages/admin/FuncionariosAdmin";
 
 function AppRoutes() {
@@ -79,6 +81,7 @@ function AppRoutes() {
         <Route path="/admin/relacionar-checklist" element={<RelacionarEquipamentoChecklist />} />
         <Route path="/admin/funcionarios" element={<FuncionariosAdmin />} />
         <Route path="/legendas" element={<LegendasAdmin />} />
+        <Route path="/respostas-checklist" element={<RespostasChecklist />} />
       </Route>
 
       {/* ROTA PADRÃO */}

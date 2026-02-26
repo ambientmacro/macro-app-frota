@@ -174,16 +174,7 @@ const NovoEquipamento: React.FC = () => {
                         </select>
                     </div>
 
-                    {/* CAMPO VALOR */}
-                    <div className="mb-3">
-                        <label className="form-label fw-bold">Valor (R$)</label>
-                        <input
-                            {...register("valor")}
-                            className="form-control form-control-lg"
-                            placeholder="Ex: 150.000,00"
-                            type="text"
-                        />
-                    </div>
+
 
                     <div className="row mb-4">
                         <div className="col-md-6">
@@ -203,6 +194,8 @@ const NovoEquipamento: React.FC = () => {
                                 placeholder="Ex: Caminhão, Retroescavadeira..."
                             />
                         </div>
+
+
                     </div>
 
                     <hr />
@@ -220,9 +213,21 @@ const NovoEquipamento: React.FC = () => {
                             <input {...register('frota')} className="form-control" placeholder="F-001" />
                         </div>
 
+
                         <div className="col-md-4">
                             <label className="form-label fw-bold">Descrição</label>
                             <input {...register('descricao')} className="form-control" placeholder="Informações adicionais..." />
+                        </div>
+
+                        {/* CAMPO VALOR */}
+                        <div className="mb-3">
+                            <label className="form-label fw-bold">Valor (R$)</label>
+                            <input
+                                {...register("valor")}
+                                className="form-control form-control-lg"
+                                placeholder="Ex: 150.000,00"
+                                type="text"
+                            />
                         </div>
                     </div>
 

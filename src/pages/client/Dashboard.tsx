@@ -55,7 +55,7 @@ const Dashboard = () => {
       onClick: () => navigate('/admin/novo-checklist'),
     },
     {
-      label: 'Relacionar Checklist',
+      label: 'Relacionar Checklist ao Equipamento',
       icon: <FaTools size={22} />,
       onClick: () => navigate('/admin/relacionar-checklist'),
     },
