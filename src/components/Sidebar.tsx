@@ -103,11 +103,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </Link>
 
           <Link to="/admin/novo-equipamento" onClick={handleLinkClick} style={linkStyle('/admin/novo-equipamento')}>
-            <FaTruck style={{ marginRight: 10 }} /> Novo Equipamento
+            <FaTruck style={{ marginRight: 10 }} /> Equipamento
           </Link>
 
           <Link to="/admin/novo-checklist" onClick={handleLinkClick} style={linkStyle('/admin/novo-checklist')}>
-            <FaClipboardCheck style={{ marginRight: 10 }} /> Criar Checklist
+            <FaClipboardCheck style={{ marginRight: 10 }} /> Checklist
           </Link>
 
           <Link to="/admin/relacionar-checklist" onClick={handleLinkClick} style={linkStyle('/admin/relacionar-checklist')}>
@@ -116,6 +116,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           <Link to="/legendas" onClick={handleLinkClick} style={linkStyle('/legendas')}>
             <FaTools style={{ marginRight: 10 }} /> Legendas
+          </Link>
+
+          <Link to="/respostas-checklist" onClick={handleLinkClick} style={linkStyle('/respostas-checklist')}>
+            <FaTools style={{ marginRight: 10 }} /> Respostas dos Checklists
           </Link>
 
         </nav>

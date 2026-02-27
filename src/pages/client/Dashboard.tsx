@@ -45,12 +45,12 @@ const Dashboard = () => {
       onClick: () => navigate('/admin/funcionarios'),
     },
     {
-      label: 'Novo Equipamento',
+      label: 'Equipamento',
       icon: <FaTruck size={22} />,
       onClick: () => navigate('/admin/novo-equipamento'),
     },
     {
-      label: 'Criar Checklist',
+      label: 'Checklist',
       icon: <FaClipboardCheck size={22} />,
       onClick: () => navigate('/admin/novo-checklist'),
     },
@@ -63,6 +63,11 @@ const Dashboard = () => {
       label: 'Gerenciar Legendas',
       icon: <FaTools size={22} />,
       onClick: () => navigate('/legendas'),
+    },
+    {
+      label: 'Respostas dos Checklists',
+      icon: <FaTools size={22} />,
+      onClick: () => navigate('/respostas-checklist'),
     },
   ];
 

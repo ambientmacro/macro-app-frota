@@ -1,7 +1,9 @@
-/* src/global.css */
-
-/* Garante altura mínima */
-html, body, #root {
+/* ============================
+   BASE DO APP
+============================ */
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -42,8 +44,13 @@ nav::-webkit-scrollbar-thumb:hover {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Botão animado */
@@ -57,7 +64,7 @@ nav::-webkit-scrollbar-thumb:hover {
 
 /* Padding automático para conteúdo depois do header fixo */
 main {
-  padding-top: 80px; /* Espaço reservado para header fixo */
+  padding-top: 80px;
 }
 
 /* Estilo geral para containers */
@@ -65,11 +72,13 @@ main {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding-inline: 2px; /* Espaço lateral padrão */
+  padding-inline: 2px;
 }
 
 /* Inputs, selects e textareas ocupam 100% */
-input, textarea, select {
+input,
+textarea,
+select {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -78,21 +87,24 @@ input, textarea, select {
 }
 
 /* Botões e links animados */
-button, a {
+button,
+a {
   transition: all 0.3s ease;
 }
 
 /* Estilos responsivos */
 @media (max-width: 767px) {
   main {
-    padding-top: 80px; /* No mobile também respeita o header */
+    padding-top: 80px;
   }
 
   .container {
-    padding-inline: 8px; /* Um pouco mais para ficar bonito no mobile */
+    padding-inline: 8px;
   }
 
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     padding: 10px;
     font-size: 1rem;
   }

@@ -31,14 +31,20 @@ const PrivateLayout: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
+
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
+      <div className="no-print">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </div>
+
+
 
       {/* Overlay blur */}
       {isMobile && sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
-          className="overlay-blur"
+          className="overlay-blur no-print"
           style={{
             position: 'fixed',
             inset: 0,
@@ -60,8 +66,9 @@ const PrivateLayout: React.FC = () => {
           transition: 'margin-left 0.4s ease-in-out',
         }}
       >
-        {/* Header fixo */}
+        {/* Header fixo (TARJA AZUL) */}
         <header
+          className="no-print"
           style={{
             position: 'fixed',
             top: 0,
@@ -112,7 +119,7 @@ const PrivateLayout: React.FC = () => {
             style={{
               width: '100%',
               maxWidth: '1200px',
-              padding: window.innerWidth < 768 ? '0.25rem' : '2rem', // 4px no mobile
+              padding: window.innerWidth < 768 ? '0.25rem' : '2rem',
               backgroundColor: '#fff',
               borderRadius: '12px',
               boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',

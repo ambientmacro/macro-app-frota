@@ -1,7 +1,76 @@
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background-color: '#F5F5F5';
-  font-family: Arial, sans-serif;
+/* ============================
+   BASE GLOBAL
+============================ */
+html,
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #F5F5F5;
+    font-family: Arial, sans-serif;
+}
+
+/* ============================
+   AJUSTES DE LAYOUT
+============================ */
+
+.overlay-blur {
+    backdrop-filter: blur(4px);
+}
+
+/* ============================
+   ÁREAS ESPECIAIS
+============================ */
+
+/* Gráfico escondido na tela, visível no PDF */
+.pizza-chart {
+    display: none;
+}
+
+/* Área exclusiva do PDF */
+.print-area {
+    display: none;
+}
+
+/* ============================
+   MODO IMPRESSÃO (PDF)
+============================ */
+@media print {
+
+    /* Remove header azul, sidebar, botões, filtros, cards, etc */
+    .no-print {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* Área exclusiva do PDF aparece */
+    .print-area {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Garante que tudo dentro da print-area apareça */
+    .print-area * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Gráfico aparece no PDF */
+    .pizza-chart {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Remove fundo cinza do layout no PDF */
+    body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Remove margens automáticas do navegador */
+    @page {
+        margin: 10mm;
+    }
 }

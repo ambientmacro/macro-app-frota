@@ -394,7 +394,7 @@ const FuncionariosAdmin: React.FC = () => {
 
                 {/* FORMULÁRIO */}
                 <div className="card p-4 mb-4">
-                    <h2 className="text-primary mb-3">Novo Funcionário</h2>
+                    <h2 className="text-primary mb-3">Novo</h2>
 
                     <div className="row mt-3">
                         <div className="col-md-4">
