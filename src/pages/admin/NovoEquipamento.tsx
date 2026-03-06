@@ -64,6 +64,10 @@ const NovoEquipamento: React.FC = () => {
     const [editandoId, setEditandoId] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
 
+    // PRÉ-VISUALIZAÇÃO CSV
+    const [previewCSV, setPreviewCSV] = useState<any[] | null>(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+
     // CARREGAR EQUIPAMENTOS
     const carregarEquipamentos = async () => {
         const snap = await getDocs(collection(db, "equipamentos"));
@@ -155,7 +159,7 @@ const NovoEquipamento: React.FC = () => {
     };
 
     // ============================================================
-    // 📌 IMPORTAÇÃO CSV (ACEITA ANSI + UTF-8)
+    // 📌 IMPORTAÇÃO CSV (ANSI + UTF-8) + PRÉVIA
     // ============================================================
     const importarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -185,7 +189,7 @@ const NovoEquipamento: React.FC = () => {
             const cabecalho = linhas[0].split(";").map((c) => c.trim().toLowerCase());
             const dados = linhas.slice(1);
 
-            let totalImportados = 0;
+            const listaPreview: any[] = [];
 
             for (const linha of dados) {
                 const partes = linha.split(";").map((p) => p.replace(/"/g, "").trim());
@@ -195,36 +199,69 @@ const NovoEquipamento: React.FC = () => {
                     registro[col] = partes[idx] ?? "";
                 });
 
-                const nome = registro["veiculo"];
-                const placa = registro["placa"];
-                const origem = registro["contrato"]?.toLowerCase() === "próprio" ? "proprio" : "alugado";
-                const valor = registro["valor mensal"] || "";
-                const tipo = "Veículo";
-
-                if (!nome || !placa) continue;
-
-                await addDoc(collection(db, "equipamentos"), {
-                    nome,
-                    tipo,
-                    placa,
-                    frota: placa,
-                    origem,
-                    valor,
-                    descricao: "",
-                    checklistModeloId: null,
-                    ativo: true,
-                    dataCriacao: new Date()
+                listaPreview.push({
+                    nome: registro["veiculo"],
+                    placa: registro["placa"],
+                    origem: registro["contrato"]?.toLowerCase() === "próprio" ? "proprio" : "alugado",
+                    valor: registro["valor mensal"] || "",
+                    tipo: "Veículo",
+                    frota: registro["placa"],
+                    descricao: ""
                 });
-
-                totalImportados++;
             }
 
-            Swal.fire("Sucesso!", `${totalImportados} veículos importados.`, "success");
-            carregarEquipamentos();
+            setPreviewCSV(listaPreview);
+            setShowPreviewModal(true);
         };
 
         reader.readAsText(file, "ISO-8859-1");
     };
+    // CONFIRMAR IMPORTAÇÃO
+    const confirmarImportacao = async () => {
+        if (!previewCSV) return;
+
+        let totalNovos = 0;
+        let totalAtualizados = 0;
+
+        const snap = await getDocs(collection(db, "equipamentos"));
+        const existentes: any[] = [];
+
+        snap.forEach((d) => {
+            existentes.push({ id: d.id, ...(d.data() as EquipamentoForm) });
+        });
+
+        for (const item of previewCSV) {
+            if (!item.placa) continue;
+
+            const encontrado = existentes.find(
+                (eq) => eq.placa?.toLowerCase() === item.placa.toLowerCase()
+            );
+
+            if (encontrado) {
+                await updateDoc(doc(db, "equipamentos", encontrado.id), item);
+                totalAtualizados++;
+            } else {
+                await addDoc(collection(db, "equipamentos"), {
+                    ...item,
+                    ativo: true,
+                    checklistModeloId: null,
+                    dataCriacao: new Date()
+                });
+                totalNovos++;
+            }
+        }
+
+        setShowPreviewModal(false);
+        setPreviewCSV(null);
+        carregarEquipamentos();
+
+        Swal.fire(
+            "Importação concluída!",
+            `${totalNovos} novos adicionados<br>${totalAtualizados} atualizados`,
+            "success"
+        );
+    };
+
     return (
         <div className="container mt-4 mb-5">
 
@@ -321,7 +358,6 @@ const NovoEquipamento: React.FC = () => {
 
                 </form>
             </div>
-
             {/* LISTAGEM */}
             <div className="card shadow p-4">
                 <h2 className="mb-4 text-primary">
@@ -469,6 +505,77 @@ const NovoEquipamento: React.FC = () => {
 
                                 <button className="btn btn-primary w-100">Salvar Alterações</button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE PRÉVIA CSV */}
+            {showPreviewModal && previewCSV && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.55)",
+                        backdropFilter: "blur(2px)",
+                        zIndex: 99999,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: "20px"
+                    }}
+                >
+                    <div
+                        style={{
+                            background: "#fff",
+                            borderRadius: "10px",
+                            width: "100%",
+                            maxWidth: "900px",
+                            maxHeight: "80vh",
+                            overflowY: "auto",
+                            padding: "20px"
+                        }}
+                    >
+                        <h4 className="mb-3">Pré-visualização da Importação</h4>
+
+                        <table className="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Placa</th>
+                                    <th>Origem</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {previewCSV.map((v, i) => (
+                                    <tr key={i}>
+                                        <td>{v.nome}</td>
+                                        <td>{v.placa}</td>
+                                        <td>{v.origem}</td>
+                                        <td>{v.valor}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div className="d-flex justify-content-end mt-3">
+                            <button
+                                className="btn btn-secondary me-2"
+                                onClick={() => setShowPreviewModal(false)}
+                            >
+                                Cancelar
+                            </button>
+
+                            <button
+                                className="btn btn-success"
+                                onClick={confirmarImportacao}
+                            >
+                                Confirmar Importação
+                            </button>
                         </div>
                     </div>
                 </div>
