@@ -22,7 +22,7 @@ interface Equipamento extends EquipamentoForm {
 
 const NovoEquipamento: React.FC = () => {
 
-    // 🔥 FORMULÁRIO PRINCIPAL (CADASTRO)
+    // FORM PRINCIPAL
     const {
         register,
         handleSubmit,
@@ -40,7 +40,7 @@ const NovoEquipamento: React.FC = () => {
         }
     });
 
-    // 🔥 FORMULÁRIO DO MODAL (EDIÇÃO)
+    // FORM DO MODAL
     const {
         register: registerEdit,
         handleSubmit: handleSubmitEdit,
@@ -64,7 +64,7 @@ const NovoEquipamento: React.FC = () => {
     const [editandoId, setEditandoId] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
 
-    // Carregar equipamentos
+    // CARREGAR EQUIPAMENTOS
     const carregarEquipamentos = async () => {
         const snap = await getDocs(collection(db, "equipamentos"));
         const lista: Equipamento[] = [];
@@ -85,7 +85,7 @@ const NovoEquipamento: React.FC = () => {
         carregarEquipamentos();
     }, []);
 
-    // Salvar novo equipamento
+    // SALVAR NOVO
     const salvarEquipamento = async (data: EquipamentoForm) => {
         try {
             await addDoc(collection(db, "equipamentos"), {
@@ -104,7 +104,7 @@ const NovoEquipamento: React.FC = () => {
         }
     };
 
-    // Salvar edição
+    // SALVAR EDIÇÃO
     const salvarEdicao = async (data: EquipamentoForm) => {
         if (!editandoId) return;
 
@@ -122,11 +122,10 @@ const NovoEquipamento: React.FC = () => {
         }
     };
 
-    // Abrir modal de edição
+    // ABRIR MODAL
     const editar = (eq: Equipamento) => {
         setEditandoId(eq.id);
 
-        // 🔥 Preenche SOMENTE o formulário do modal
         setValueEdit("nome", eq.nome);
         setValueEdit("tipo", eq.tipo);
         setValueEdit("placa", eq.placa || "");
@@ -138,7 +137,7 @@ const NovoEquipamento: React.FC = () => {
         setShowModal(true);
     };
 
-    // Excluir equipamento
+    // EXCLUIR
     const excluir = async (id: string) => {
         const confirm = await Swal.fire({
             title: "Excluir equipamento?",
@@ -155,6 +154,77 @@ const NovoEquipamento: React.FC = () => {
         }
     };
 
+    // ============================================================
+    // 📌 IMPORTAÇÃO CSV (ACEITA ANSI + UTF-8)
+    // ============================================================
+    const importarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = async (event) => {
+            let texto = event.target?.result as string;
+
+            texto = texto.replace(/^\uFEFF/, "");
+
+            try {
+                texto = decodeURIComponent(escape(texto));
+            } catch { }
+
+            const linhas = texto
+                .split(/\r?\n/)
+                .map((l) => l.trim())
+                .filter((l) => l.length > 0);
+
+            if (linhas.length < 2) {
+                Swal.fire("Erro", "CSV vazio ou incompleto.", "error");
+                return;
+            }
+
+            const cabecalho = linhas[0].split(";").map((c) => c.trim().toLowerCase());
+            const dados = linhas.slice(1);
+
+            let totalImportados = 0;
+
+            for (const linha of dados) {
+                const partes = linha.split(";").map((p) => p.replace(/"/g, "").trim());
+
+                const registro: Record<string, string> = {};
+                cabecalho.forEach((col, idx) => {
+                    registro[col] = partes[idx] ?? "";
+                });
+
+                const nome = registro["veiculo"];
+                const placa = registro["placa"];
+                const origem = registro["contrato"]?.toLowerCase() === "próprio" ? "proprio" : "alugado";
+                const valor = registro["valor mensal"] || "";
+                const tipo = "Veículo";
+
+                if (!nome || !placa) continue;
+
+                await addDoc(collection(db, "equipamentos"), {
+                    nome,
+                    tipo,
+                    placa,
+                    frota: placa,
+                    origem,
+                    valor,
+                    descricao: "",
+                    checklistModeloId: null,
+                    ativo: true,
+                    dataCriacao: new Date()
+                });
+
+                totalImportados++;
+            }
+
+            Swal.fire("Sucesso!", `${totalImportados} veículos importados.`, "success");
+            carregarEquipamentos();
+        };
+
+        reader.readAsText(file, "ISO-8859-1");
+    };
     return (
         <div className="container mt-4 mb-5">
 
@@ -163,6 +233,23 @@ const NovoEquipamento: React.FC = () => {
                 <h2 className="mb-4 text-primary">
                     <FaTruck className="me-2" /> Cadastrar Equipamento / Veículo
                 </h2>
+
+                <div className="mb-3">
+                    <button
+                        className="btn btn-secondary me-2"
+                        onClick={() => document.getElementById("csvEquipamentos")?.click()}
+                    >
+                        Importar CSV
+                    </button>
+
+                    <input
+                        id="csvEquipamentos"
+                        type="file"
+                        accept=".csv"
+                        style={{ display: "none" }}
+                        onChange={importarCSV}
+                    />
+                </div>
 
                 <form onSubmit={handleSubmit(salvarEquipamento)}>
 
@@ -173,8 +260,6 @@ const NovoEquipamento: React.FC = () => {
                             <option value="alugado">Alugado</option>
                         </select>
                     </div>
-
-
 
                     <div className="row mb-4">
                         <div className="col-md-6">
@@ -194,8 +279,6 @@ const NovoEquipamento: React.FC = () => {
                                 placeholder="Ex: Caminhão, Retroescavadeira..."
                             />
                         </div>
-
-
                     </div>
 
                     <hr />
@@ -213,13 +296,11 @@ const NovoEquipamento: React.FC = () => {
                             <input {...register('frota')} className="form-control" placeholder="F-001" />
                         </div>
 
-
                         <div className="col-md-4">
                             <label className="form-label fw-bold">Descrição</label>
                             <input {...register('descricao')} className="form-control" placeholder="Informações adicionais..." />
                         </div>
 
-                        {/* CAMPO VALOR */}
                         <div className="mb-3">
                             <label className="form-label fw-bold">Valor (R$)</label>
                             <input
@@ -243,7 +324,6 @@ const NovoEquipamento: React.FC = () => {
 
             {/* LISTAGEM */}
             <div className="card shadow p-4">
-                {/* <h4 className="mb-3">Equipamentos Cadastrados</h4> */}
                 <h2 className="mb-4 text-primary">
                     <FaClipboardList className="me-2" /> Equipamentos Cadastrados / Veículo
                 </h2>
