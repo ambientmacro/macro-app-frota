@@ -323,10 +323,19 @@ const FuncionariosAdmin: React.FC = () => {
         ];
 
         const csvContent = linhas
-            .map((linha) => linha.map((v) => `"${(v || "").toString().replace(/"/g, '""')}"`).join(";"))
+            .map((linha) =>
+                linha
+                    .map((v) => `"${(v || "").toString().replace(/"/g, '""')}"`)
+                    .join(";")
+            )
             .join("\n");
 
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const BOM = "\uFEFF"; // Corrige acentos no Excel
+
+        const blob = new Blob([BOM + csvContent], {
+            type: "text/csv;charset=utf-8;"
+        });
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -335,6 +344,7 @@ const FuncionariosAdmin: React.FC = () => {
         link.click();
         document.body.removeChild(link);
     };
+    
     const listaFiltrada = lista.filter((f) => {
         if (filtroUsuario === "com" && !f.criarUsuario) return false;
         if (filtroUsuario === "sem" && f.criarUsuario) return false;

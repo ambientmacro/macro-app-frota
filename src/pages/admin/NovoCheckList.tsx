@@ -67,6 +67,7 @@ const NovoCheckList: React.FC = () => {
       }))
     };
   };
+
   const importarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,7 +75,17 @@ const NovoCheckList: React.FC = () => {
     const reader = new FileReader();
 
     reader.onload = async (event) => {
-      const texto = event.target?.result as string;
+      let texto = event.target?.result as string;
+
+      // 🔥 Remove BOM invisível (Excel UTF-8)
+      texto = texto.replace(/^\uFEFF/, "");
+
+      // 🔥 Converte ANSI / ISO-8859-1 → UTF-8
+      try {
+        texto = decodeURIComponent(escape(texto));
+      } catch {
+        // Se já estiver em UTF-8, ignora
+      }
 
       const linhas = texto
         .split(/\r?\n/)
@@ -160,8 +171,11 @@ const NovoCheckList: React.FC = () => {
       Swal.fire("Sucesso!", "Checklist importado com sucesso!", "success");
     };
 
-    reader.readAsText(file, "UTF-8");
+    // 🔥 Lê como ISO-8859-1 (Excel usa isso em muitos casos)
+    reader.readAsText(file, "ISO-8859-1");
   };
+
+
   const salvarNovo = async (data: ChecklistForm) => {
     if (data.campos.length === 0) {
       Swal.fire("Atenção", "Adicione pelo menos um campo.", "warning");
