@@ -93,7 +93,7 @@ const CampoChecklist: React.FC<Props> = ({
             {tipo === "lista" && (
                 <div className="mt-3">
 
-                    <label className="form-label fw-bold">Opções da lista do Motorista</label>
+                    <label className="form-label fw-bold">Opções de resposta do Motorista</label>
 
                     <div className="mb-3">
                         {opcoes.length > 0 ? (
