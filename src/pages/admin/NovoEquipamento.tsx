@@ -6,6 +6,7 @@ import { FaSave, FaTruck, FaEdit, FaTrash, FaClipboardList } from 'react-icons/f
 import Swal from 'sweetalert2';
 
 interface EquipamentoForm {
+    categoria: "leve" | "pesado";
     nome: string;
     tipo: string;
     placa?: string;
@@ -30,6 +31,7 @@ const NovoEquipamento: React.FC = () => {
         formState: { isSubmitting }
     } = useForm<EquipamentoForm>({
         defaultValues: {
+            categoria: "pesado", // valor inicial
             nome: '',
             tipo: '',
             placa: '',
@@ -48,6 +50,7 @@ const NovoEquipamento: React.FC = () => {
         setValue: setValueEdit
     } = useForm<EquipamentoForm>({
         defaultValues: {
+            categoria: "leve",
             nome: '',
             tipo: '',
             placa: '',
@@ -129,7 +132,7 @@ const NovoEquipamento: React.FC = () => {
     // ABRIR MODAL
     const editar = (eq: Equipamento) => {
         setEditandoId(eq.id);
-
+        setValueEdit("categoria", eq.categoria);
         setValueEdit("nome", eq.nome);
         setValueEdit("tipo", eq.tipo);
         setValueEdit("placa", eq.placa || "");
@@ -200,6 +203,7 @@ const NovoEquipamento: React.FC = () => {
                 });
 
                 listaPreview.push({
+                    categoria: registro["categoria"]?.toLowerCase() === "leve" ? "leve" : "pesado", // novo campo
                     nome: registro["veiculo"],
                     placa: registro["placa"],
                     origem: registro["contrato"]?.toLowerCase() === "próprio" ? "proprio" : "alugado",
@@ -290,6 +294,15 @@ const NovoEquipamento: React.FC = () => {
 
                 <form onSubmit={handleSubmit(salvarEquipamento)}>
 
+
+                    <div className="mb-3">
+                        <label className="form-label fw-bold">Categoria Veículo</label>
+                        <select {...register("categoria")} className="form-select form-select-lg">
+                            <option value="leve">Leve</option>
+                            <option value="pesado">Pesado</option>
+                        </select>
+                    </div>
+
                     <div className="mb-3">
                         <label className="form-label fw-bold">Tipo de contrato</label>
                         <select {...register("origem")} className="form-select form-select-lg">
@@ -358,6 +371,8 @@ const NovoEquipamento: React.FC = () => {
 
                 </form>
             </div>
+
+
             {/* LISTAGEM */}
             <div className="card shadow p-4">
                 <h2 className="mb-4 text-primary">
@@ -462,6 +477,13 @@ const NovoEquipamento: React.FC = () => {
 
                         <div className="modal-body p-3">
                             <form onSubmit={handleSubmitEdit(salvarEdicao)}>
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">Categoria Veículo</label>
+                                    <select {...registerEdit("categoria")} className="form-select">
+                                        <option value="pesado">Pesado</option>
+                                        <option value="leve">Leve</option>
+                                    </select>
+                                </div>
 
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Tipo de contrato</label>
@@ -505,6 +527,7 @@ const NovoEquipamento: React.FC = () => {
 
                                 <button className="btn btn-primary w-100">Salvar Alterações</button>
                             </form>
+
                         </div>
                     </div>
                 </div>
@@ -544,6 +567,7 @@ const NovoEquipamento: React.FC = () => {
                         <table className="table table-bordered">
                             <thead>
                                 <tr>
+                                    <th>Categoria</th>
                                     <th>Nome</th>
                                     <th>Placa</th>
                                     <th>Origem</th>
@@ -553,6 +577,7 @@ const NovoEquipamento: React.FC = () => {
                             <tbody>
                                 {previewCSV.map((v, i) => (
                                     <tr key={i}>
+                                        <td>{v.categoria}</td>
                                         <td>{v.nome}</td>
                                         <td>{v.placa}</td>
                                         <td>{v.origem}</td>
