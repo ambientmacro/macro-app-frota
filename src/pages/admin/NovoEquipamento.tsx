@@ -329,8 +329,8 @@ const NovoEquipamento: React.FC = () => {
                         </div>
 
                         <div className="col-md-4">
-                            <label className="form-label fw-bold">Número da Frota</label>
-                            <input {...register('frota')} className="form-control" placeholder="F-001" />
+                            <label className="form-label fw-bold">Tag/Patrimonio</label>
+                            <input {...register('frota')} className="form-control" placeholder="C28" />
                         </div>
 
                         <div className="col-md-4">
