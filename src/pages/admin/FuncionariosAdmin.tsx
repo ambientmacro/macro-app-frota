@@ -259,7 +259,7 @@ const FuncionariosAdmin: React.FC = () => {
                 nome: editando.nome,
                 email: editando.email,
                 telefone: editando.telefone,
-                funcao: "Operador/Motorista",
+                funcao: editando.funcao, 
                 equipamentoTitularId: editando.equipamentoTitularId || null,
                 ativo: editando.ativo,
                 criarUsuario: editando.criarUsuario,
@@ -344,7 +344,7 @@ const FuncionariosAdmin: React.FC = () => {
         link.click();
         document.body.removeChild(link);
     };
-    
+
     const listaFiltrada = lista.filter((f) => {
         if (filtroUsuario === "com" && !f.criarUsuario) return false;
         if (filtroUsuario === "sem" && f.criarUsuario) return false;
@@ -464,9 +464,16 @@ const FuncionariosAdmin: React.FC = () => {
                                 value={funcao}
                                 onChange={(e) => setFuncao(e.target.value)}
                             >
+                                {/* AQUI VAI ENTRAR AS PERMISSÕES DE CRIAÇÕES DO PERFIL e tem o modal de edição também que falta vincular no componente */}
                                 <option value="Operador/Motorista">
                                     Operador Motorista
                                 </option>
+
+                                
+                                <option value="Campo/Encarregado">
+                                    Campo Encarregado
+                                </option>
+
                             </select>
                         </div>
 
@@ -733,8 +740,13 @@ const FuncionariosAdmin: React.FC = () => {
                                     })
                                 }
                             >
+                                {/* Aqui é o modal de edição */}
                                 <option value="Operador/Motorista">
                                     Operador/Motorista
+                                </option>
+
+                                <option value="Campo/Encarregado">
+                                    Campo/Encarregado
                                 </option>
                             </select>
 

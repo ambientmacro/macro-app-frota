@@ -22,6 +22,11 @@ import VisualizarChecklist from "./pages/public/VisualizarChecklist";
 
 // import LancarPontoJornada from "./pages/public/LancarPontoJornada";
 
+
+// Páginas públicas autenticadas (cliente/encarregado)
+import LancarCheckListEncarregado from "./pages/Encarregado/LancarCheckListEncarregado";
+
+
 // Páginas privadas (admin)
 import Dashboard from "./pages/client/Dashboard";
 import EmpresasAdmin from "./pages/admin/EmpresasAdmin";
@@ -62,6 +67,10 @@ function AppRoutes() {
         <Route path="/historico-checklist" element={<HistoricoChecklist />} />
         <Route path="/visualizar-checklist/:id" element={<VisualizarChecklist />} />
         {/* <Route path="/lancar-ponto-jornada" element={<LancarPontoJornada />} /> */}
+
+
+        {/* Encarregado */}
+      <Route path="/lancar-checklist-encarregado" element={<LancarCheckListEncarregado />} />
       </Route>
 
       {/* ROTAS PRIVADAS (ADMIN) */}

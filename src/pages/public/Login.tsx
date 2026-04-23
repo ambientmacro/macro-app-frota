@@ -8,7 +8,12 @@ import { auth, db } from '../../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const telaCadastrar = false;
+  const telaLogin = true;
+  // USE A TELA PADRÃO PARA INTERCALAR PARA TELA DE CADASTRO
+  const telaPadral = telaLogin;
+
+  const [isLogin, setIsLogin] = useState(telaPadral);
   const [email, setEmail] = useState('yuritakeo@ucl.br');
   const [senha, setSenha] = useState('123456');
   const [confirmarSenha, setConfirmarSenha] = useState('');
