@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </Link>
 
           <Link to="/admin/novo-equipamento" onClick={handleLinkClick} style={linkStyle('/admin/novo-equipamento')}>
-            <FaTruck style={{ marginRight: 10 }} /> Equipamento
+            <FaTruck style={{ marginRight: 10 }} /> Requerimento Contratual Veículos e Motoristas
           </Link>
 
           <Link to="/admin/novo-checklist" onClick={handleLinkClick} style={linkStyle('/admin/novo-checklist')}>

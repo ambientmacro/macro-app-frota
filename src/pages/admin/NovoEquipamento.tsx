@@ -1,611 +1,854 @@
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { db } from '../../firebaseConfig';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { FaSave, FaTruck, FaEdit, FaTrash, FaClipboardList } from 'react-icons/fa';
-import Swal from 'sweetalert2';
+// src/pages/NovoEquipamento.tsx
 
-interface EquipamentoForm {
-    categoria: "leve" | "pesado";
-    nome: string;
-    tipo: string;
-    placa?: string;
-    frota?: string;
-    descricao?: string;
-    origem: "proprio" | "alugado";
-    valor?: string;
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { db } from "../../firebaseConfig";
+import {
+    collection,
+    addDoc,
+    getDocs,
+    Timestamp,
+    DocumentData,
+} from "firebase/firestore";
+import { FaSave, FaTruck, FaClipboardList } from "react-icons/fa";
+import Swal from "sweetalert2";
+
+type Entidade = "veiculo" | "motorista";
+
+interface FormRequerimentoBase {
+    entidade: Entidade;
 }
 
-interface Equipamento extends EquipamentoForm {
+interface FormVeiculo {
+    nome: string;
+    tipo: string;
+    categoria: "leve" | "pesado";
+    origem: "proprio" | "alugado" | "prestacao";
+    placa?: string;
+    renavam?: string;
+    crlv?: string;
+    anoFabricacao?: string;
+    anoModelo?: string;
+    capacidade?: string;
+    combustivel?: string;
+    quilometragem?: string;
+    horimetro?: string;
+    valorMensal?: string;
+    valorAquisicao?: string;
+    centroCusto?: string;
+    unidade?: string;
+    responsavel?: string;
+    observacoes?: string;
+
+    // regras novas
+    categoriaCnh?: string; // para LEVE
+    cursosObrigatorios?: string[]; // para PESADO
+}
+
+interface FormMotorista {
+    nomeMotorista: string;
+    cpf?: string;
+    rg?: string;
+    dataNascimento?: string;
+    telefone?: string;
+    email?: string;
+    endereco?: string;
+    cnh?: string;
+    categoriaCnh?: string;
+    validadeCnh?: string;
+    registroCnh?: string;
+    tipoContrato?: string;
+    empresa?: string;
+    funcao?: string;
+    observacoesMotorista?: string;
+    dataInicioContrato?: string;
+    dataFinalContrato?: string;
+    tipoPeriodoContrato?: string;
+    duracaoCustomizada?: string;
+
+}
+
+type FormRequerimento = FormRequerimentoBase & FormVeiculo & FormMotorista;
+
+interface RequerimentoListagem {
     id: string;
-    checklistModeloId?: string | null;
+    entidade: Entidade;
+    status: string;
+    criadoEm: Date;
+    resolvidoEm?: Date;
+    criadoPor?: string;
+    dadosSolicitados: any;
 }
 
 const NovoEquipamento: React.FC = () => {
-
-    // FORM PRINCIPAL
     const {
         register,
         handleSubmit,
+        watch,
         reset,
-        formState: { isSubmitting }
-    } = useForm<EquipamentoForm>({
+        formState: { isSubmitting },
+    } = useForm<FormRequerimento>({
         defaultValues: {
-            categoria: "pesado", // valor inicial
-            nome: '',
-            tipo: '',
-            placa: '',
-            frota: '',
-            descricao: '',
+            entidade: "veiculo",
+            categoria: "pesado",
             origem: "proprio",
-            valor: ""
-        }
+        },
     });
 
-    // FORM DO MODAL
-    const {
-        register: registerEdit,
-        handleSubmit: handleSubmitEdit,
-        reset: resetEdit,
-        setValue: setValueEdit
-    } = useForm<EquipamentoForm>({
-        defaultValues: {
-            categoria: "leve",
-            nome: '',
-            tipo: '',
-            placa: '',
-            frota: '',
-            descricao: '',
-            origem: "proprio",
-            valor: ""
-        }
-    });
-
-    const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
+    const [requerimentos, setRequerimentos] = useState<RequerimentoListagem[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [editandoId, setEditandoId] = useState<string | null>(null);
-    const [showModal, setShowModal] = useState(false);
+    const entidadeSelecionada = watch("entidade");
+    const categoriaSelecionada = watch("categoria");
+    const origemSelecionada = watch("origem");
 
-    // PRÉ-VISUALIZAÇÃO CSV
-    const [previewCSV, setPreviewCSV] = useState<any[] | null>(null);
-    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    // relógio ao vivo
+    const [agora, setAgora] = useState(new Date());
+    useEffect(() => {
+        const timer = setInterval(() => setAgora(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
 
-    // CARREGAR EQUIPAMENTOS
-    const carregarEquipamentos = async () => {
-        const snap = await getDocs(collection(db, "equipamentos"));
-        const lista: Equipamento[] = [];
+    // carregar requerimentos
+    const carregarRequerimentos = async () => {
+        setLoading(true);
 
-        snap.forEach((d) => {
-            const data = d.data() as EquipamentoForm;
+        const lista: RequerimentoListagem[] = [];
+
+        const snapFrotas = await getDocs(collection(db, "dp", "requerimento", "frotas"));
+        snapFrotas.forEach((d) => {
+            const data = d.data() as DocumentData;
             lista.push({
                 id: d.id,
-                ...data
+                entidade: data.entidade,
+                status: data.status,
+                criadoEm: data.criadoEm?.toDate() || new Date(),
+                resolvidoEm: data.resolvidoEm?.toDate() || undefined,
+                criadoPor: data.criadoPor,
+                dadosSolicitados: data.dadosSolicitados,
             });
         });
 
-        setEquipamentos(lista);
+        const snapMotoristas = await getDocs(collection(db, "dp", "requerimento", "motoristas"));
+        snapMotoristas.forEach((d) => {
+            const data = d.data() as DocumentData;
+            lista.push({
+                id: d.id,
+                entidade: data.entidade,
+                status: data.status,
+                criadoEm: data.criadoEm?.toDate() || new Date(),
+                resolvidoEm: data.resolvidoEm?.toDate() || undefined,
+                criadoPor: data.criadoPor,
+                dadosSolicitados: data.dadosSolicitados,
+            });
+        });
+
+        lista.sort((a, b) => b.criadoEm.getTime() - a.criadoEm.getTime());
+
+        setRequerimentos(lista);
         setLoading(false);
     };
 
     useEffect(() => {
-        carregarEquipamentos();
+        carregarRequerimentos();
     }, []);
 
-    // SALVAR NOVO
-    const salvarEquipamento = async (data: EquipamentoForm) => {
+    // helpers de tempo
+    const calcularDuracao = (ini: Date, fim: Date) => {
+        const diffMs = fim.getTime() - ini.getTime();
+        const minutos = Math.floor(diffMs / 60000);
+        const horas = Math.floor(minutos / 60);
+        const dias = Math.floor(horas / 24);
+
+        return {
+            dias,
+            horas: horas % 24,
+            minutos: minutos % 60,
+        };
+    };
+
+    const formatarDuracao = (d: number, h: number, m: number) => {
+        const partes = [];
+        if (d > 0) partes.push(`${d} dia${d > 1 ? "s" : ""}`);
+        if (h > 0) partes.push(`${h} hora${h > 1 ? "s" : ""}`);
+        partes.push(`${m} minuto${m > 1 ? "s" : ""}`);
+        return partes.join(", ");
+    };
+    // ============================
+    // SUBMIT — sempre será NOVO requerimento
+    // ============================
+    const onSubmit = async (data: FormRequerimento) => {
         try {
-            await addDoc(collection(db, "equipamentos"), {
-                ...data,
-                checklistModeloId: null,
-                dataCriacao: new Date(),
-                ativo: true
+            const { entidade, ...resto } = data;
+
+            const dadosSolicitados: any = {};
+
+            // ============================
+            // VEÍCULO
+            // ============================
+            if (entidade === "veiculo") {
+                dadosSolicitados.nome = resto.nome;
+                dadosSolicitados.tipo = resto.tipo;
+                dadosSolicitados.categoria = resto.categoria;
+                dadosSolicitados.origem = resto.origem;
+
+                dadosSolicitados.placa = resto.placa || "";
+                dadosSolicitados.renavam = resto.renavam || "";
+                dadosSolicitados.crlv = resto.crlv || "";
+                dadosSolicitados.anoFabricacao = resto.anoFabricacao || "";
+                dadosSolicitados.anoModelo = resto.anoModelo || "";
+                dadosSolicitados.capacidade = resto.capacidade || "";
+                dadosSolicitados.combustivel = resto.combustivel || "";
+                dadosSolicitados.quilometragem = resto.quilometragem || "";
+                dadosSolicitados.horimetro = resto.horimetro || "";
+                dadosSolicitados.valorMensal = resto.valorMensal || "";
+                dadosSolicitados.valorAquisicao = resto.valorAquisicao || "";
+                dadosSolicitados.centroCusto = resto.centroCusto || "";
+                dadosSolicitados.unidade = resto.unidade || "";
+                dadosSolicitados.responsavel = resto.responsavel || "";
+                dadosSolicitados.observacoes = resto.observacoes || "";
+
+                // regras novas
+                // contrato (somente se não for próprio)
+                if (resto.origem !== "proprio") {
+                    dadosSolicitados.dataInicioContrato = resto.dataInicioContrato || "";
+                    dadosSolicitados.dataFinalContrato = resto.dataFinalContrato || "";
+                    dadosSolicitados.tipoPeriodoContrato = resto.tipoPeriodoContrato || "";
+                    dadosSolicitados.duracaoCustomizada = resto.duracaoCustomizada || "";
+                }
+
+                if (resto.categoria === "leve") {
+                    dadosSolicitados.categoriaCnh = resto.categoriaCnh || "";
+                }
+
+                if (resto.categoria === "pesado") {
+                    dadosSolicitados.cursosObrigatorios = resto.cursosObrigatorios || [];
+                }
+
+                if (resto.origem === "prestacao") {
+                    dadosSolicitados.alertaOrigem =
+                        "Origem 'Prestação de serviço' — DP deve validar contrato e documentação.";
+                }
+            }
+
+            // ============================
+            // MOTORISTA
+            // ============================
+            if (entidade === "motorista") {
+                dadosSolicitados.nome = resto.nomeMotorista;
+                dadosSolicitados.cpf = resto.cpf || "";
+                dadosSolicitados.rg = resto.rg || "";
+                dadosSolicitados.dataNascimento = resto.dataNascimento || "";
+                dadosSolicitados.telefone = resto.telefone || "";
+                dadosSolicitados.email = resto.email || "";
+                dadosSolicitados.endereco = resto.endereco || "";
+                dadosSolicitados.cnh = resto.cnh || "";
+                dadosSolicitados.categoriaCnh = resto.categoriaCnh || "";
+                dadosSolicitados.validadeCnh = resto.validadeCnh || "";
+                dadosSolicitados.registroCnh = resto.registroCnh || "";
+                dadosSolicitados.tipoContrato = resto.tipoContrato || "";
+                dadosSolicitados.empresa = resto.empresa || "";
+                dadosSolicitados.funcao = resto.funcao || "";
+                dadosSolicitados.observacoes = resto.observacoesMotorista || "";
+            }
+
+            const caminho =
+                entidade === "veiculo"
+                    ? ["dp", "requerimento", "frotas"]
+                    : ["dp", "requerimento", "motoristas"];
+
+            await addDoc(collection(db, ...caminho), {
+                tipoSolicitacao: "novo", // FIXO
+                entidade,
+                status: "analise",
+                dadosSolicitados,
+                criadoPor: "admFrotaId",
+                criadoEm: Timestamp.now(),
+                resolvidoEm: null,
             });
 
-            Swal.fire('Sucesso!', 'Equipamento cadastrado com sucesso.', 'success');
-            reset();
-            carregarEquipamentos();
-        } catch (error) {
-            console.error(error);
-            Swal.fire('Erro', 'Não foi possível salvar o cadastro.', 'error');
-        }
-    };
-
-    // SALVAR EDIÇÃO
-    const salvarEdicao = async (data: EquipamentoForm) => {
-        if (!editandoId) return;
-
-        try {
-            await updateDoc(doc(db, "equipamentos", editandoId), data);
-
-            Swal.fire('Sucesso!', 'Equipamento atualizado.', 'success');
-            setShowModal(false);
-            setEditandoId(null);
-            resetEdit();
-            carregarEquipamentos();
-        } catch (error) {
-            console.error(error);
-            Swal.fire('Erro', 'Não foi possível atualizar.', 'error');
-        }
-    };
-
-    // ABRIR MODAL
-    const editar = (eq: Equipamento) => {
-        setEditandoId(eq.id);
-        setValueEdit("categoria", eq.categoria);
-        setValueEdit("nome", eq.nome);
-        setValueEdit("tipo", eq.tipo);
-        setValueEdit("placa", eq.placa || "");
-        setValueEdit("frota", eq.frota || "");
-        setValueEdit("descricao", eq.descricao || "");
-        setValueEdit("origem", eq.origem);
-        setValueEdit("valor", eq.valor || "");
-
-        setShowModal(true);
-    };
-
-    // EXCLUIR
-    const excluir = async (id: string) => {
-        const confirm = await Swal.fire({
-            title: "Excluir equipamento?",
-            text: "Essa ação não pode ser desfeita.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sim",
-            cancelButtonText: "Cancelar",
-        });
-
-        if (confirm.isConfirmed) {
-            await deleteDoc(doc(db, "equipamentos", id));
-            carregarEquipamentos();
-        }
-    };
-
-    // ============================================================
-    // 📌 IMPORTAÇÃO CSV (ANSI + UTF-8) + PRÉVIA
-    // ============================================================
-    const importarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-
-        reader.onload = async (event) => {
-            let texto = event.target?.result as string;
-
-            texto = texto.replace(/^\uFEFF/, "");
-
-            try {
-                texto = decodeURIComponent(escape(texto));
-            } catch { }
-
-            const linhas = texto
-                .split(/\r?\n/)
-                .map((l) => l.trim())
-                .filter((l) => l.length > 0);
-
-            if (linhas.length < 2) {
-                Swal.fire("Erro", "CSV vazio ou incompleto.", "error");
-                return;
-            }
-
-            const cabecalho = linhas[0].split(";").map((c) => c.trim().toLowerCase());
-            const dados = linhas.slice(1);
-
-            const listaPreview: any[] = [];
-
-            for (const linha of dados) {
-                const partes = linha.split(";").map((p) => p.replace(/"/g, "").trim());
-
-                const registro: Record<string, string> = {};
-                cabecalho.forEach((col, idx) => {
-                    registro[col] = partes[idx] ?? "";
-                });
-
-                listaPreview.push({
-                    categoria: registro["categoria"]?.toLowerCase() === "leve" ? "leve" : "pesado", // novo campo
-                    nome: registro["veiculo"],
-                    placa: registro["placa"],
-                    origem: registro["contrato"]?.toLowerCase() === "próprio" ? "proprio" : "alugado",
-                    valor: registro["valor mensal"] || "",
-                    tipo: "Veículo",
-                    frota: registro["placa"],
-                    descricao: ""
-                });
-            }
-
-            setPreviewCSV(listaPreview);
-            setShowPreviewModal(true);
-        };
-
-        reader.readAsText(file, "ISO-8859-1");
-    };
-    // CONFIRMAR IMPORTAÇÃO
-    const confirmarImportacao = async () => {
-        if (!previewCSV) return;
-
-        let totalNovos = 0;
-        let totalAtualizados = 0;
-
-        const snap = await getDocs(collection(db, "equipamentos"));
-        const existentes: any[] = [];
-
-        snap.forEach((d) => {
-            existentes.push({ id: d.id, ...(d.data() as EquipamentoForm) });
-        });
-
-        for (const item of previewCSV) {
-            if (!item.placa) continue;
-
-            const encontrado = existentes.find(
-                (eq) => eq.placa?.toLowerCase() === item.placa.toLowerCase()
+            Swal.fire(
+                "Requisição enviada!",
+                "O departamento pessoal irá analisar sua solicitação.",
+                "success"
             );
 
-            if (encontrado) {
-                await updateDoc(doc(db, "equipamentos", encontrado.id), item);
-                totalAtualizados++;
-            } else {
-                await addDoc(collection(db, "equipamentos"), {
-                    ...item,
-                    ativo: true,
-                    checklistModeloId: null,
-                    dataCriacao: new Date()
-                });
-                totalNovos++;
-            }
+            reset({
+                entidade,
+                categoria: "pesado",
+                origem: "proprio",
+            });
+
+            carregarRequerimentos();
+        } catch (error) {
+            console.error(error);
+            Swal.fire("Erro", "Não foi possível enviar a requisição.", "error");
         }
-
-        setShowPreviewModal(false);
-        setPreviewCSV(null);
-        carregarEquipamentos();
-
-        Swal.fire(
-            "Importação concluída!",
-            `${totalNovos} novos adicionados<br>${totalAtualizados} atualizados`,
-            "success"
-        );
     };
 
+    // ============================
+    // RENDER
+    // ============================
     return (
         <div className="container mt-4 mb-5">
-
             {/* FORMULÁRIO PRINCIPAL */}
             <div className="card shadow p-4 mb-4">
                 <h2 className="mb-4 text-primary">
-                    <FaTruck className="me-2" /> Cadastrar Equipamento / Veículo
+                    <FaTruck className="me-2" /> Requerimento Contratual Veículos e Motoristas
                 </h2>
 
-                <div className="mb-3">
-                    <button
-                        className="btn btn-secondary me-2"
-                        onClick={() => document.getElementById("csvEquipamentos")?.click()}
-                    >
-                        Importar CSV
-                    </button>
-
-                    <input
-                        id="csvEquipamentos"
-                        type="file"
-                        accept=".csv"
-                        style={{ display: "none" }}
-                        onChange={importarCSV}
-                    />
-                </div>
-
-                <form onSubmit={handleSubmit(salvarEquipamento)}>
-
-
-                    <div className="mb-3">
-                        <label className="form-label fw-bold">Categoria Veículo</label>
-                        <select {...register("categoria")} className="form-select form-select-lg">
-                            <option value="leve">Leve</option>
-                            <option value="pesado">Pesado</option>
-                        </select>
-                    </div>
-
-                    <div className="mb-3">
-                        <label className="form-label fw-bold">Tipo de contrato</label>
-                        <select {...register("origem")} className="form-select form-select-lg">
-                            <option value="proprio">Próprio</option>
-                            <option value="alugado">Alugado</option>
-                        </select>
-                    </div>
-
-                    <div className="row mb-4">
-                        <div className="col-md-6">
-                            <label className="form-label fw-bold">Nome do Equipamento</label>
-                            <input
-                                {...register('nome', { required: true })}
-                                className="form-control form-control-lg"
-                                placeholder="Ex: Caminhão Muck 01"
-                            />
-                        </div>
-
-                        <div className="col-md-6">
-                            <label className="form-label fw-bold">Tipo</label>
-                            <input
-                                {...register('tipo', { required: true })}
-                                className="form-control form-control-lg"
-                                placeholder="Ex: Caminhão, Retroescavadeira..."
-                            />
-                        </div>
-                    </div>
-
-                    <hr />
-
-                    <h5 className="mb-3">Informações Complementares</h5>
-
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    {/* ENTIDADE */}
                     <div className="row mb-3">
                         <div className="col-md-4">
-                            <label className="form-label fw-bold">Placa</label>
-                            <input {...register('placa')} className="form-control" placeholder="ABC-1234" />
-                        </div>
-
-                        <div className="col-md-4">
-                            <label className="form-label fw-bold">Tag/Patrimonio</label>
-                            <input {...register('frota')} className="form-control" placeholder="C28" />
-                        </div>
-
-                        <div className="col-md-4">
-                            <label className="form-label fw-bold">Descrição</label>
-                            <input {...register('descricao')} className="form-control" placeholder="Informações adicionais..." />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label fw-bold">Valor (R$)</label>
-                            <input
-                                {...register("valor")}
-                                className="form-control form-control-lg"
-                                placeholder="Ex: 150.000,00"
-                                type="text"
-                            />
+                            <label className="form-label fw-bold">Entidade</label>
+                            <select {...register("entidade")} className="form-select form-select-lg">
+                                <option value="veiculo">Veículo</option>
+                                <option value="motorista">Motorista</option>
+                            </select>
                         </div>
                     </div>
+                    {/* CAMPOS DO VEÍCULO */}
+                    {entidadeSelecionada === "veiculo" && (
+                        <>
+                            <hr />
+                            <h5 className="mb-3">Dados do Veículo</h5>
 
+                            {/* Categoria */}
+                            <div className="mb-3">
+                                <label className="form-label fw-bold">Categoria Veículo</label>
+                                <select {...register("categoria")} className="form-select form-select-lg">
+                                    <option value="leve">Leve</option>
+                                    <option value="pesado">Pesado</option>
+                                </select>
+                            </div>
+
+
+                            {/* CNH obrigatória para LEVE */}
+                            {categoriaSelecionada === "leve" && (
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">Categoria da CNH (Obrigatória para veículo leve)</label>
+                                    <select {...register("categoriaCnh")} className="form-select">
+                                        <option value="">Selecione</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                        <option value="E">E</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Cursos NR obrigatórios para PESADO */}
+                            {categoriaSelecionada === "pesado" && (
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">Cursos obrigatórios (NR)</label>
+
+                                    <div className="form-check">
+                                        <input
+                                            type="checkbox"
+                                            value="NR-11"
+                                            {...register("cursosObrigatorios")}
+                                            className="form-check-input"
+                                            id="nr11"
+                                        />
+                                        <label htmlFor="nr11" className="form-check-label">NR-11</label>
+                                    </div>
+
+                                    <div className="form-check">
+                                        <input
+                                            type="checkbox"
+                                            value="NR-12"
+                                            {...register("cursosObrigatorios")}
+                                            className="form-check-input"
+                                            id="nr12"
+                                        />
+                                        <label htmlFor="nr12" className="form-check-label">NR-12</label>
+                                    </div>
+
+                                    <div className="form-check">
+                                        <input
+                                            type="checkbox"
+                                            value="NR-18"
+                                            {...register("cursosObrigatorios")}
+                                            className="form-check-input"
+                                            id="nr18"
+                                        />
+                                        <label htmlFor="nr18" className="form-check-label">NR-18</label>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Origem */}
+                            <div className="mb-3">
+                                <label className="form-label fw-bold">Origem / Tipo de contrato</label>
+                                <select {...register("origem")} className="form-select form-select-lg">
+                                    <option value="proprio">Próprio</option>
+                                    <option value="alugado">Alugado</option>
+                                    <option value="prestacao">Prestação de serviço</option>
+                                </select>
+                            </div>
+
+                            {/* Valor Aquisição — aparece somente quando origem = próprio */}
+                            {origemSelecionada === "proprio" && (
+                                <div className="row mb-3">
+                                    <div className="col-md-3">
+                                        <label className="form-label fw-bold">Valor Aquisição (R$)</label>
+                                        <input
+                                            {...register("valorAquisicao")}
+                                            className="form-control"
+                                            placeholder="R$ 100.000,00"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+
+                            {/* Campos de contrato — aparecem somente se NÃO for próprio */}
+                            {origemSelecionada !== "proprio" && (
+                                <div className="row mb-3">
+
+                                    <div className="col-md-3">
+                                        <label className="form-label fw-bold">Data Início do Contrato</label>
+                                        <input
+                                            type="date"
+                                            {...register("dataInicioContrato")}
+                                            className="form-control"
+                                        />
+                                    </div>
+
+                                    <div className="col-md-3">
+                                        <label className="form-label fw-bold">Data Final do Contrato</label>
+                                        <input
+                                            type="date"
+                                            {...register("dataFinalContrato")}
+                                            className="form-control"
+                                        />
+                                    </div>
+
+                                    <div className="col-md-3">
+                                        <label className="form-label fw-bold">Tipo de Período</label>
+                                        <select {...register("tipoPeriodoContrato")} className="form-select">
+                                            <option value="anual">Anual</option>
+                                            <option value="mensal">Mensal</option>
+                                            <option value="semanal">Semanal</option>
+                                            <option value="diaria">Diária</option>
+
+                                        </select>
+                                    </div>
+
+                                    
+
+                                </div>
+                            )}
+
+
+
+                            {/* Alerta origem prestador */}
+                            {origemSelecionada === "prestacao" && (
+                                <div className="alert alert-warning">
+                                    Origem "Prestação de serviço" — Verificar se será somente Funcionário e tem que ter no banco de dados funcionários.
+                                </div>
+                            )}
+
+                            {/* Nome + Tipo */}
+                            <div className="row mb-3">
+                                <div className="col-md-6">
+                                    <label className="form-label fw-bold">Nome do Equipamento</label>
+                                    <input
+                                        {...register("nome", { required: true })}
+                                        className="form-control form-control-lg"
+                                        placeholder="Ex: Caminhão Muck 01"
+                                    />
+                                </div>
+
+                                <div className="col-md-6">
+                                    <label className="form-label fw-bold">Tipo</label>
+                                    <input
+                                        {...register("tipo", { required: true })}
+                                        className="form-control form-control-lg"
+                                        placeholder="Ex: Caminhão, Retroescavadeira..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Placa / Renavam / CRLV */}
+                            <div className="row mb-3">
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Placa</label>
+                                    <input {...register("placa")} className="form-control" placeholder="ABC-1234" />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Renavam</label>
+                                    <input {...register("renavam")} className="form-control" placeholder="Renavam" />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">CRLV</label>
+                                    <input {...register("crlv")} className="form-control" placeholder="Número do CRLV" />
+                                </div>
+                            </div>
+
+                            {/* Ano / Capacidade / Combustível */}
+                            <div className="row mb-3">
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Ano Fabricação</label>
+                                    <input {...register("anoFabricacao")} className="form-control" placeholder="2018" />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Ano Modelo</label>
+                                    <input {...register("anoModelo")} className="form-control" placeholder="2019" />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Capacidade</label>
+                                    <input
+                                        {...register("capacidade")}
+                                        className="form-control"
+                                        placeholder="Ex: 8.000 litros"
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Combustível</label>
+                                    <input
+                                        {...register("combustivel")}
+                                        className="form-control"
+                                        placeholder="Diesel, Gasolina..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Quilometragem / Horímetro / Valores */}
+                            <div className="row mb-3">
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Quilometragem</label>
+                                    <input
+                                        {...register("quilometragem")}
+                                        className="form-control"
+                                        placeholder="Ex: 120000"
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Horímetro</label>
+                                    <input
+                                        {...register("horimetro")}
+                                        className="form-control"
+                                        placeholder="Ex: 3500h"
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Valor Mensal (R$)</label>
+                                    <input
+                                        {...register("valorMensal")}
+                                        className="form-control"
+                                        placeholder="Se alugado"
+                                    />
+                                </div>
+
+
+                            </div>
+
+                            {/* Centro de custo / Unidade / Responsável */}
+                            <div className="row mb-3">
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Centro de Custo</label>
+                                    <input
+                                        {...register("centroCusto")}
+                                        className="form-control"
+                                        placeholder="Ex: Operações"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Unidade / Base</label>
+                                    <input
+                                        {...register("unidade")}
+                                        className="form-control"
+                                        placeholder="Ex: Vila Velha"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Responsável</label>
+                                    <input
+                                        {...register("responsavel")}
+                                        className="form-control"
+                                        placeholder="Nome do responsável"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Observações */}
+                            <div className="mb-3">
+                                <label className="form-label fw-bold">Observações</label>
+                                <textarea
+                                    {...register("observacoes")}
+                                    className="form-control"
+                                    rows={3}
+                                    placeholder="Informações adicionais..."
+                                />
+                            </div>
+
+
+
+
+                        </>
+                    )}
+
+                    {/* CAMPOS DO MOTORISTA */}
+                    {entidadeSelecionada === "motorista" && (
+                        <>
+                            <hr />
+                            <h5 className="mb-3">Dados do Motorista</h5>
+
+                            <div className="mb-3">
+                                <label className="form-label fw-bold">Nome do Motorista</label>
+                                <input
+                                    {...register("nomeMotorista", { required: true })}
+                                    className="form-control form-control-lg"
+                                    placeholder="Nome completo"
+                                />
+                            </div>
+
+                            <div className="row mb-3">
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">CPF</label>
+                                    <input
+                                        {...register("cpf")}
+                                        className="form-control"
+                                        placeholder="CPF"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">RG</label>
+                                    <input
+                                        {...register("rg")}
+                                        className="form-control"
+                                        placeholder="RG"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Data de Nascimento</label>
+                                    <input
+                                        {...register("dataNascimento")}
+                                        type="date"
+                                        className="form-control"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row mb-3">
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Telefone</label>
+                                    <input
+                                        {...register("telefone")}
+                                        className="form-control"
+                                        placeholder="Telefone"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Email</label>
+                                    <input
+                                        {...register("email")}
+                                        className="form-control"
+                                        placeholder="Email"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Endereço</label>
+                                    <input
+                                        {...register("endereco")}
+                                        className="form-control"
+                                        placeholder="Endereço completo"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row mb-3">
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">CNH</label>
+                                    <input
+                                        {...register("cnh")}
+                                        className="form-control"
+                                        placeholder="Número da CNH"
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Categoria CNH</label>
+                                    <input
+                                        {...register("categoriaCnh")}
+                                        className="form-control"
+                                        placeholder="Ex: D, E..."
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Validade CNH</label>
+                                    <input
+                                        {...register("validadeCnh")}
+                                        type="date"
+                                        className="form-control"
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Registro CNH</label>
+                                    <input
+                                        {...register("registroCnh")}
+                                        className="form-control"
+                                        placeholder="Registro"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row mb-3">
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Tipo de Contrato</label>
+                                    <input
+                                        {...register("tipoContrato")}
+                                        className="form-control"
+                                        placeholder="CLT, Terceirizado..."
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Empresa</label>
+                                    <input
+                                        {...register("empresa")}
+                                        className="form-control"
+                                        placeholder="Se terceirizado"
+                                    />
+                                </div>
+
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Função</label>
+                                    <input
+                                        {...register("funcao")}
+                                        className="form-control"
+                                        placeholder="Função"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mb-3">
+                                <label className="form-label fw-bold">Observações</label>
+                                <textarea
+                                    {...register("observacoesMotorista")}
+                                    className="form-control"
+                                    rows={3}
+                                    placeholder="Informações adicionais..."
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {/* BOTÃO DE ENVIO */}
                     <div className="d-flex justify-content-end mt-4">
-                        <button type="submit" className="btn btn-success btn-lg px-5" disabled={isSubmitting}>
+                        <button
+                            type="submit"
+                            className="btn btn-success btn-lg px-5"
+                            disabled={isSubmitting}
+                        >
                             <FaSave className="me-2" />
-                            {isSubmitting ? 'Salvando...' : 'Salvar Cadastro'}
+                            {isSubmitting ? "Enviando..." : "Enviar Requisição"}
                         </button>
                     </div>
-
                 </form>
             </div>
 
-
-            {/* LISTAGEM */}
+            {/* LISTAGEM DE REQUERIMENTOS */}
             <div className="card shadow p-4">
                 <h2 className="mb-4 text-primary">
-                    <FaClipboardList className="me-2" /> Equipamentos Cadastrados / Veículo
+                    <FaClipboardList className="me-2" /> Requerimentos Enviados
                 </h2>
 
                 {loading && <p>Carregando...</p>}
 
-                {!loading && equipamentos.length === 0 && (
-                    <p className="text-muted">Nenhum equipamento cadastrado.</p>
+                {!loading && requerimentos.length === 0 && (
+                    <p className="text-muted">Nenhum requerimento enviado.</p>
                 )}
 
-                {!loading && equipamentos.map((eq) => (
-                    <div
-                        key={eq.id}
-                        className="card p-2 mb-2 d-flex flex-row justify-content-between align-items-center"
-                    >
-                        <div>
-                            <strong>{eq.nome}</strong>
-                            <div className="text-muted" style={{ fontSize: 12 }}>
-                                {eq.tipo}
+                {!loading &&
+                    requerimentos.map((req) => {
+                        const inicio = req.criadoEm;
+                        const fim = req.resolvidoEm || agora;
 
-                                {eq.origem && (
-                                    <> • Origem: {eq.origem === "proprio" ? "Próprio" : "Alugado"}</>
-                                )}
+                        const diffMs = fim.getTime() - inicio.getTime();
+                        const minutos = Math.floor(diffMs / 60000);
+                        const horas = Math.floor(minutos / 60);
+                        const dias = Math.floor(horas / 24);
 
-                                {eq.frota && (
-                                    <> • Frota {eq.frota}</>
-                                )}
+                        const tempo = (() => {
+                            const texto = `${dias}d ${horas % 24}h ${minutos % 60}m`;
 
-                                {eq.placa && (
-                                    <> • Placa {eq.placa}</>
-                                )}
+                            if (req.status === "analise") {
+                                return `Em análise há ${texto}`;
+                            }
 
-                                {eq.valor && (
-                                    <> • Valor R$ {eq.valor}</>
-                                )}
+                            if (req.status === "aprovado") {
+                                return `Aprovado em ${texto}`;
+                            }
 
-                                {eq.descricao && (
-                                    <> • Descrição {eq.descricao}</>
-                                )}
+                            return `Reprovado em ${texto}`;
+                        })();
+
+                        return (
+                            <div
+                                key={req.id}
+                                className="card p-2 mb-2 d-flex flex-row justify-content-between align-items-center"
+                            >
+                                <div>
+                                    <strong>
+                                        {req.entidade === "veiculo"
+                                            ? req.dadosSolicitados?.nome || "Veículo"
+                                            : req.dadosSolicitados?.nome || "Motorista"}
+                                    </strong>
+
+                                    <div className="text-muted" style={{ fontSize: 12 }}>
+                                        {/* Informações do veículo */}
+                                        {req.entidade === "veiculo" && (
+                                            <>
+                                                {req.dadosSolicitados?.tipo && (
+                                                    <> • {req.dadosSolicitados.tipo}</>
+                                                )}
+                                                {req.dadosSolicitados?.placa && (
+                                                    <> • Placa {req.dadosSolicitados.placa}</>
+                                                )}
+                                                {req.dadosSolicitados?.categoria && (
+                                                    <> • Categoria {req.dadosSolicitados.categoria}</>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* Informações do motorista */}
+                                        {req.entidade === "motorista" && (
+                                            <>
+                                                {req.dadosSolicitados?.cpf && (
+                                                    <> • CPF {req.dadosSolicitados.cpf}</>
+                                                )}
+                                                {req.dadosSolicitados?.telefone && (
+                                                    <> • Tel {req.dadosSolicitados.telefone}</>
+                                                )}
+                                            </>
+                                        )}
+
+                                        <> • Status: {req.status}</>
+                                        <> • {tempo}</>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <div>
-                            <button
-                                className="btn btn-sm btn-outline-primary me-2"
-                                onClick={() => editar(eq)}
-                            >
-                                <FaEdit />
-                            </button>
-
-                            <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => excluir(eq.id)}
-                            >
-                                <FaTrash />
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                        );
+                    })}
             </div>
-
-            {/* MODAL DE EDIÇÃO */}
-            {showModal && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100vw",
-                        height: "100vh",
-                        backgroundColor: "rgba(0,0,0,0.55)",
-                        backdropFilter: "blur(2px)",
-                        zIndex: 99999,
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        padding: "20px"
-                    }}
-                >
-                    <div
-                        style={{
-                            background: "#fff",
-                            borderRadius: "10px",
-                            width: "100%",
-                            maxWidth: "700px",
-                            boxShadow: "0 0 20px rgba(0,0,0,0.3)",
-                            animation: "fadeIn 0.2s ease"
-                        }}
-                    >
-                        <div className="modal-header p-3">
-                            <h5 className="modal-title">Editar Equipamento</h5>
-                            <button
-                                className="btn-close"
-                                onClick={() => {
-                                    resetEdit();
-                                    setShowModal(false);
-                                }}
-                            ></button>
-                        </div>
-
-                        <div className="modal-body p-3">
-                            <form onSubmit={handleSubmitEdit(salvarEdicao)}>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Categoria Veículo</label>
-                                    <select {...registerEdit("categoria")} className="form-select">
-                                        <option value="pesado">Pesado</option>
-                                        <option value="leve">Leve</option>
-                                    </select>
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Tipo de contrato</label>
-                                    <select {...registerEdit("origem")} className="form-select">
-                                        <option value="proprio">Próprio</option>
-                                        <option value="alugado">Alugado</option>
-                                    </select>
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Valor (R$)</label>
-                                    <input {...registerEdit("valor")} className="form-control" />
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Nome</label>
-                                    <input {...registerEdit("nome")} className="form-control" />
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Tipo</label>
-                                    <input {...registerEdit("tipo")} className="form-control" />
-                                </div>
-
-                                <div className="row mb-3">
-                                    <div className="col-md-4">
-                                        <label className="form-label fw-bold">Placa</label>
-                                        <input {...registerEdit("placa")} className="form-control" />
-                                    </div>
-
-                                    <div className="col-md-4">
-                                        <label className="form-label fw-bold">Frota</label>
-                                        <input {...registerEdit("frota")} className="form-control" />
-                                    </div>
-
-                                    <div className="col-md-4">
-                                        <label className="form-label fw-bold">Descrição</label>
-                                        <input {...registerEdit("descricao")} className="form-control" />
-                                    </div>
-                                </div>
-
-                                <button className="btn btn-primary w-100">Salvar Alterações</button>
-                            </form>
-
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL DE PRÉVIA CSV */}
-            {showPreviewModal && previewCSV && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100vw",
-                        height: "100vh",
-                        backgroundColor: "rgba(0,0,0,0.55)",
-                        backdropFilter: "blur(2px)",
-                        zIndex: 99999,
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        padding: "20px"
-                    }}
-                >
-                    <div
-                        style={{
-                            background: "#fff",
-                            borderRadius: "10px",
-                            width: "100%",
-                            maxWidth: "900px",
-                            maxHeight: "80vh",
-                            overflowY: "auto",
-                            padding: "20px"
-                        }}
-                    >
-                        <h4 className="mb-3">Pré-visualização da Importação</h4>
-
-                        <table className="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Categoria</th>
-                                    <th>Nome</th>
-                                    <th>Placa</th>
-                                    <th>Origem</th>
-                                    <th>Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {previewCSV.map((v, i) => (
-                                    <tr key={i}>
-                                        <td>{v.categoria}</td>
-                                        <td>{v.nome}</td>
-                                        <td>{v.placa}</td>
-                                        <td>{v.origem}</td>
-                                        <td>{v.valor}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        <div className="d-flex justify-content-end mt-3">
-                            <button
-                                className="btn btn-secondary me-2"
-                                onClick={() => setShowPreviewModal(false)}
-                            >
-                                Cancelar
-                            </button>
-
-                            <button
-                                className="btn btn-success"
-                                onClick={confirmarImportacao}
-                            >
-                                Confirmar Importação
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
         </div>
     );
 };

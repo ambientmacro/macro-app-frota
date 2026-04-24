@@ -70,7 +70,7 @@ function AppRoutes() {
 
 
         {/* Encarregado */}
-      <Route path="/lancar-checklist-encarregado" element={<LancarCheckListEncarregado />} />
+        <Route path="/lancar-checklist-encarregado" element={<LancarCheckListEncarregado />} />
       </Route>
 
       {/* ROTAS PRIVADAS (ADMIN) */}
