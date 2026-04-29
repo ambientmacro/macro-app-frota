@@ -22,7 +22,7 @@ interface FormRequerimentoBase {
 interface FormVeiculo {
     nome: string;
     tipo: string;
-    categoria: "leve" | "pesado";
+    porte: "leve" | "pesado";
     origem: "proprio" | "alugado" | "prestacao";
     placa?: string;
     renavam?: string;
@@ -90,7 +90,7 @@ const NovoEquipamento: React.FC = () => {
     } = useForm<FormRequerimento>({
         defaultValues: {
             entidade: "veiculo",
-            categoria: "pesado",
+            porte: "pesado",
             origem: "proprio",
         },
     });
@@ -99,8 +99,14 @@ const NovoEquipamento: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     const entidadeSelecionada = watch("entidade");
-    const categoriaSelecionada = watch("categoria");
+    const categoriaSelecionada = watch("porte");
     const origemSelecionada = watch("origem");
+
+
+    // No topo do componente, você pode controlar com useState
+    const [vincularMotorista, setVincularMotorista] = useState(false);
+
+
 
     // relógio ao vivo
     const [agora, setAgora] = useState(new Date());
@@ -189,7 +195,7 @@ const NovoEquipamento: React.FC = () => {
             if (entidade === "veiculo") {
                 dadosSolicitados.nome = resto.nome;
                 dadosSolicitados.tipo = resto.tipo;
-                dadosSolicitados.categoria = resto.categoria;
+                dadosSolicitados.porte = resto.porte;
                 dadosSolicitados.origem = resto.origem;
 
                 dadosSolicitados.placa = resto.placa || "";
@@ -217,11 +223,11 @@ const NovoEquipamento: React.FC = () => {
                     dadosSolicitados.duracaoCustomizada = resto.duracaoCustomizada || "";
                 }
 
-                if (resto.categoria === "leve") {
+                if (resto.porte === "leve") {
                     dadosSolicitados.categoriaCnh = resto.categoriaCnh || "";
                 }
 
-                if (resto.categoria === "pesado") {
+                if (resto.porte === "pesado") {
                     dadosSolicitados.cursosObrigatorios = resto.cursosObrigatorios || [];
                 }
 
@@ -275,7 +281,7 @@ const NovoEquipamento: React.FC = () => {
 
             reset({
                 entidade,
-                categoria: "pesado",
+                porte: "pesado",
                 origem: "proprio",
             });
 
@@ -314,34 +320,36 @@ const NovoEquipamento: React.FC = () => {
                             <hr />
                             <h5 className="mb-3">Dados do Veículo</h5>
 
-                            {/* Categoria */}
+                            {/* Porte */}
                             <div className="mb-3">
-                                <label className="form-label fw-bold">Categoria Veículo</label>
-                                <select {...register("categoria")} className="form-select form-select-lg">
+                                <label className="form-label fw-bold">Porte do Veículo</label>
+                                <select {...register("porte")} className="form-select form-select-lg">
+                                    <option value="">Selecione...</option>
                                     <option value="leve">Leve</option>
                                     <option value="pesado">Pesado</option>
                                 </select>
                             </div>
 
 
-                            {/* CNH obrigatória para LEVE */}
-                            {categoriaSelecionada === "leve" && (
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Categoria da CNH (Obrigatória para veículo leve)</label>
-                                    <select {...register("categoriaCnh")} className="form-select">
-                                        <option value="">Selecione</option>
-                                        <option value="B">B</option>
-                                        <option value="C">C</option>
-                                        <option value="D">D</option>
-                                        <option value="E">E</option>
-                                    </select>
-                                </div>
-                            )}
+
+                            
+
+
+                            <div className="mb-3">
+                                <label className="form-label fw-bold">Requisito CNH para este veículo</label>
+                                <select {...register("categoriaCnh")} className="form-select">
+                                    <option value="">Selecione</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="E">E</option>
+                                </select>
+                            </div>
 
                             {/* Cursos NR obrigatórios para PESADO */}
                             {categoriaSelecionada === "pesado" && (
                                 <div className="mb-3">
-                                    <label className="form-label fw-bold">Cursos obrigatórios (NR)</label>
+                                    <label className="form-label fw-bold">Cursos obrigatórios para este equipamento)</label>
 
                                     <div className="form-check">
                                         <input
@@ -351,7 +359,7 @@ const NovoEquipamento: React.FC = () => {
                                             className="form-check-input"
                                             id="nr11"
                                         />
-                                        <label htmlFor="nr11" className="form-check-label">NR-11</label>
+                                        <label htmlFor="nr11" className="form-check-label">Curso de retroescavadeira</label>
                                     </div>
 
                                     <div className="form-check">
@@ -362,7 +370,7 @@ const NovoEquipamento: React.FC = () => {
                                             className="form-check-input"
                                             id="nr12"
                                         />
-                                        <label htmlFor="nr12" className="form-check-label">NR-12</label>
+                                        <label htmlFor="nr12" className="form-check-label">Curso de cavadeira</label>
                                     </div>
 
                                     <div className="form-check">
@@ -373,7 +381,7 @@ const NovoEquipamento: React.FC = () => {
                                             className="form-check-input"
                                             id="nr18"
                                         />
-                                        <label htmlFor="nr18" className="form-check-label">NR-18</label>
+                                        <label htmlFor="nr18" className="form-check-label">Curso de Muck</label>
                                     </div>
                                 </div>
                             )}
@@ -388,9 +396,10 @@ const NovoEquipamento: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* Valor Aquisição — aparece somente quando origem = próprio */}
-                            {origemSelecionada === "proprio" && (
-                                <div className="row mb-3">
+
+                            <div className="row mb-3">
+                                {/* Valor Aquisição — aparece somente quando origem = próprio */}
+                                {origemSelecionada === "proprio" && (
                                     <div className="col-md-3">
                                         <label className="form-label fw-bold">Valor Aquisição (R$)</label>
                                         <input
@@ -399,8 +408,17 @@ const NovoEquipamento: React.FC = () => {
                                             placeholder="R$ 100.000,00"
                                         />
                                     </div>
+                                )}
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Valor Mensal (R$)</label>
+                                    <input
+                                        {...register("valorMensal")}
+                                        className="form-control"
+                                        placeholder="Se alugado"
+                                    />
                                 </div>
-                            )}
+                            </div>
 
 
                             {/* Campos de contrato — aparecem somente se NÃO for próprio */}
@@ -436,37 +454,36 @@ const NovoEquipamento: React.FC = () => {
                                         </select>
                                     </div>
 
-                                    
+
 
                                 </div>
                             )}
-
-
 
                             {/* Alerta origem prestador */}
                             {origemSelecionada === "prestacao" && (
                                 <div className="alert alert-warning">
                                     Origem "Prestação de serviço" — Verificar se será somente Funcionário e tem que ter no banco de dados funcionários.
+                                    Aqui foi confirmado o relacionamento com Rik
                                 </div>
                             )}
 
                             {/* Nome + Tipo */}
                             <div className="row mb-3">
                                 <div className="col-md-6">
-                                    <label className="form-label fw-bold">Nome do Equipamento</label>
+                                    <label className="form-label fw-bold">Marca</label>
                                     <input
                                         {...register("nome", { required: true })}
                                         className="form-control form-control-lg"
-                                        placeholder="Ex: Caminhão Muck 01"
+                                        placeholder="Ex: Caterpillar, JCB"
                                     />
                                 </div>
 
                                 <div className="col-md-6">
-                                    <label className="form-label fw-bold">Tipo</label>
+                                    <label className="form-label fw-bold">Modelo</label>
                                     <input
                                         {...register("tipo", { required: true })}
                                         className="form-control form-control-lg"
-                                        placeholder="Ex: Caminhão, Retroescavadeira..."
+                                        placeholder="Ex: 416F2, 3CX, etc."
                                     />
                                 </div>
                             </div>
@@ -510,14 +527,19 @@ const NovoEquipamento: React.FC = () => {
                                     />
                                 </div>
 
+
                                 <div className="col-md-3">
                                     <label className="form-label fw-bold">Combustível</label>
-                                    <input
-                                        {...register("combustivel")}
-                                        className="form-control"
-                                        placeholder="Diesel, Gasolina..."
-                                    />
+                                    <select {...register("combustivel")} className="form-select form-select-lg">
+                                        <option value="diesel">Diesel</option>
+                                        <option value="gasolina">Gasolina</option>
+                                        <option value="alcool">Álcool</option>
+                                        <option value="gnv">GNV</option>
+                                        <option value="flex">Flex</option>
+                                    </select>
                                 </div>
+
+
                             </div>
 
                             {/* Quilometragem / Horímetro / Valores */}
@@ -540,14 +562,7 @@ const NovoEquipamento: React.FC = () => {
                                     />
                                 </div>
 
-                                <div className="col-md-3">
-                                    <label className="form-label fw-bold">Valor Mensal (R$)</label>
-                                    <input
-                                        {...register("valorMensal")}
-                                        className="form-control"
-                                        placeholder="Se alugado"
-                                    />
-                                </div>
+
 
 
                             </div>
@@ -604,6 +619,33 @@ const NovoEquipamento: React.FC = () => {
                         <>
                             <hr />
                             <h5 className="mb-3">Dados do Motorista</h5>
+
+
+
+                            <div className="row mb-3">
+                                <div className="col-md-6">
+                                    <label className="form-label fw-bold">
+                                        Relacionar este motorista ao veículo deste formulário
+                                    </label>
+                                    <div className="form-check">
+                                        <input
+                                            type="checkbox"
+                                            className="form-check-input"
+                                            id="vincularMotorista"
+                                            checked={vincularMotorista}
+                                            onChange={(e) => setVincularMotorista(e.target.checked)}
+                                        />
+                                        <label htmlFor="vincularMotorista" className="form-check-label">
+                                            Vincular motorista
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
+
 
                             <div className="mb-3">
                                 <label className="form-label fw-bold">Nome do Motorista</label>
@@ -791,7 +833,7 @@ const NovoEquipamento: React.FC = () => {
                             const texto = `${dias}d ${horas % 24}h ${minutos % 60}m`;
 
                             if (req.status === "analise") {
-                                return `Em análise há ${texto}`;
+                                return <strong>Em análise há {texto}</strong>;
                             }
 
                             if (req.status === "aprovado") {
@@ -823,8 +865,8 @@ const NovoEquipamento: React.FC = () => {
                                                 {req.dadosSolicitados?.placa && (
                                                     <> • Placa {req.dadosSolicitados.placa}</>
                                                 )}
-                                                {req.dadosSolicitados?.categoria && (
-                                                    <> • Categoria {req.dadosSolicitados.categoria}</>
+                                                {req.dadosSolicitados?.porte && (
+                                                    <> • Categoria {req.dadosSolicitados.porte}</>
                                                 )}
                                             </>
                                         )}
