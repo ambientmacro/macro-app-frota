@@ -1,260 +1,247 @@
 // src/pages/admin/RequisicaoWizard/RequisicaoWizard.tsx
 
-import React, { useState } from "react";
-import StepNavigator from "./components/StepNavigator.tsx";
+import { useEffect, useState, useMemo } from "react";
 
-// IMPORTS DOS STEPS
-import StepTipoRequerimento from "./steps/StepTipoRequerimento";
-import StepDadosIniciais from "./steps/veiculo/StepDadosIniciais";
-import StepDadosVeiculo from "./steps/veiculo/StepDadosVeiculo";
-import StepContrato from "./steps/veiculo/StepContrato";
-import StepRevisaoVeiculo from "./steps/veiculo/StepRevisaoVeiculo";
-import StepDadosMotorista from "./steps/motorista/StepDadosMotorista";
-import StepVinculo from "./steps/relacionamento/StepVinculo";
-import StepEnviar from "./steps/StepEnviar";
+import MacroSteps from "./components/MacroSteps";
+import StepNavigatorVertical from "./components/StepNavigatorVertical";
 
-const RequisicaoWizard: React.FC = () => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [tipoRequerimento, setTipoRequerimento] = useState("");
+import { wizardSteps } from "./utils/wizardSteps";
+import { loadWizardDraft, saveWizardDraft, clearWizardDraft } from "./utils/wizardLocalStorage";
 
-    // ESTADOS DOS FORMULÁRIOS
-    const [dadosIniciais, setDadosIniciais] = useState({
-        porte: "",
-        tipo: "",
-        marca: "",
-        origem: "",
+// STEPS — TIPO
+import StepTipoRequerimento from "./steps/tipo/StepTipoRequerimento";
+
+// STEPS — DADOS
+import StepDadosIniciais from "./steps/dados/StepDadosIniciais";
+import StepDadosVeiculo from "./steps/dados/StepDadosVeiculo";
+import StepOrigemContrato from "./steps/dados/StepOrigemContrato";
+import StepValoresAluguel from "./steps/dados/StepValoresAluguel";
+import StepDadosMotorista from "./steps/dados/StepDadosMotorista";
+import StepJornada from "./steps/dados/StepJornada";
+import StepSalario from "./steps/dados/StepSalario";
+import StepBeneficios from "./steps/dados/StepBeneficios";
+import StepVinculo from "./steps/dados/StepVinculo";
+
+// STEPS — DOCUMENTOS
+import StepCRLV from "./steps/documentos/StepCRLV";
+import StepCNH from "./steps/documentos/StepCNH";
+import StepContrato from "./steps/documentos/StepContrato";
+import StepFotos from "./steps/documentos/StepFotos";
+import StepOutros from "./steps/documentos/StepOutros";
+
+// STEP — REVISÃO
+import StepRevisaoFinal from "./steps/revisao/StepRevisaoFinal";
+
+export default function RequisicaoWizard() {
+    // -------------------------------------------------------
+    // ESTADO GLOBAL DO FORMULÁRIO
+    // -------------------------------------------------------
+    const [formData, setFormData] = useState<any>({
+        tipoRequerimento: null,
+
+        dadosIniciais: {},
+        dadosVeiculo: {},
+        origemContrato: {},
+        valoresAluguel: {},
+
+        dadosMotorista: {},
+        jornada: {},
+        salario: {},
+        beneficios: {},
+        vinculo: {},
+
+        documentos: {
+            crlv: null,
+            cnh: null,
+            contrato: null,
+            fotos: [],
+            outros: [],
+        },
     });
 
-    const [dadosVeiculo, setDadosVeiculo] = useState({
-        placa: "",
-        renavam: "",
-        crlv: "",
-        anoFabricacao: "",
-        anoModelo: "",
-        capacidade: "",
-        combustivel: "",
-        quilometragem: "",
-        horimetro: "",
-        centroCusto: "",
-        unidade: "",
-        responsavel: "",
-        observacoes: "",
-    });
+    // -------------------------------------------------------
+    // CARREGAR RASCUNHO DO LOCALSTORAGE
+    // -------------------------------------------------------
+    useEffect(() => {
+        const saved = loadWizardDraft();
+        if (saved) setFormData(saved);
+    }, []);
 
-    const [dadosContrato, setDadosContrato] = useState({
-        empresa: "",
-        cnpj: "",
-        contratoNumero: "",
-        vigenciaInicio: "",
-        vigenciaFim: "",
-    });
+    // -------------------------------------------------------
+    // SALVAR RASCUNHO AUTOMATICAMENTE
+    // -------------------------------------------------------
+    useEffect(() => {
+        saveWizardDraft(formData);
+    }, [formData]);
 
-    const [dadosMotorista, setDadosMotorista] = useState({
-        nome: "",
-        cpf: "",
-        telefone: "",
-        cnhNumero: "",
-        cnhCategoria: "",
-        cnhValidade: "",
-    });
+    // -------------------------------------------------------
+    // CONTROLE DE MACROSTEP E SUBSTEP
+    // -------------------------------------------------------
+    const [currentMacroStep, setCurrentMacroStep] = useState(0);
+    const [currentSubStep, setCurrentSubStep] = useState(0);
 
-    const [dadosVinculo, setDadosVinculo] = useState({
-        motoristaId: "",
-        veiculoId: "",
-    });
+    const tipo = formData.tipoRequerimento;
+    const temMotorista = tipo === "veiculo_motorista";
 
-    // -------------------------
-    // DEFINIÇÃO DINÂMICA DOS STEPS
-    // -------------------------
+    const subSteps = useMemo(() => {
+        return wizardSteps.getSubSteps(tipo, temMotorista);
+    }, [tipo, temMotorista]);
 
-    const steps: any[] = [];
+    const macroLabels = wizardSteps.macroSteps;
+    const currentSubSteps = subSteps[currentMacroStep] || [];
 
-    // STEP 1 — Tipo
-    steps.push({
-        label: "Tipo de Requerimento",
-        numero: "1",
-        status: tipoRequerimento ? "concluido" : currentStep === 0 ? "andamento" : "pendente",
-        componente: (
-            <StepTipoRequerimento
-                value={tipoRequerimento}
-                onSelect={(v) => setTipoRequerimento(v)}
-            />
-        ),
-    });
+    // -------------------------------------------------------
+    // NAVEGAÇÃO LIVRE (OPÇÃO A)
+    // -------------------------------------------------------
+    const goToMacroStep = (index: number) => {
+        setCurrentMacroStep(index);
+        setCurrentSubStep(0);
+    };
 
-    // VEÍCULO
-    if (tipoRequerimento === "veiculo" || tipoRequerimento === "veiculo_motorista") {
-        steps.push({
-            label: "Dados Iniciais",
-            numero: "2.1",
-            status:
-                dadosIniciais.porte && dadosIniciais.tipo && dadosIniciais.marca
-                    ? "concluido"
-                    : currentStep === steps.length
-                        ? "andamento"
-                        : "pendente",
-            componente: (
-                <StepDadosIniciais
-                    data={dadosIniciais}
-                    onChange={(f, v) => setDadosIniciais((p) => ({ ...p, [f]: v }))}
+    const goToSubStep = (index: number) => {
+        setCurrentSubStep(index);
+    };
+
+    const handleNext = () => {
+        if (currentSubStep < currentSubSteps.length - 1) {
+            setCurrentSubStep((prev) => prev + 1);
+        } else {
+            setCurrentMacroStep((prev) => prev + 1);
+            setCurrentSubStep(0);
+        }
+    };
+
+    const handleBack = () => {
+        if (currentSubStep > 0) {
+            setCurrentSubStep((prev) => prev - 1);
+        } else {
+            const prevMacro = currentMacroStep - 1;
+            setCurrentMacroStep(prevMacro);
+            setCurrentSubStep(subSteps[prevMacro]?.length - 1 || 0);
+        }
+    };
+
+    // -------------------------------------------------------
+    // RENDERIZAÇÃO DOS STEPS
+    // -------------------------------------------------------
+    const renderStep = () => {
+        // MACROSTEP 0 — TIPO
+        if (currentMacroStep === 0) {
+            return (
+                <StepTipoRequerimento
+                    formData={formData}
+                    setFormData={setFormData}
+                    onNext={handleNext}
                 />
-            ),
-        });
-
-        steps.push({
-            label: "Dados do Veículo",
-            numero: "2.2",
-            status:
-                dadosVeiculo.placa && dadosVeiculo.renavam
-                    ? "concluido"
-                    : currentStep === steps.length
-                        ? "andamento"
-                        : "pendente",
-            componente: (
-                <StepDadosVeiculo
-                    data={dadosVeiculo}
-                    onChange={(f, v) => setDadosVeiculo((p) => ({ ...p, [f]: v }))}
-                />
-            ),
-        });
-
-        if (dadosIniciais.origem && dadosIniciais.origem !== "proprio") {
-            steps.push({
-                label: "Contrato",
-                numero: "2.3",
-                status:
-                    dadosContrato.empresa && dadosContrato.cnpj
-                        ? "concluido"
-                        : currentStep === steps.length
-                            ? "andamento"
-                            : "pendente",
-                componente: (
-                    <StepContrato
-                        data={dadosContrato}
-                        onChange={(f, v) => setDadosContrato((p) => ({ ...p, [f]: v }))}
-                    />
-                ),
-            });
+            );
         }
 
-        steps.push({
-            label: "Revisão",
-            numero: "2.4",
-            status: currentStep === steps.length ? "andamento" : "pendente",
-            componente: (
-                <StepRevisaoVeiculo
-                    dados={{ dadosIniciais, dadosVeiculo, dadosContrato }}
+        // MACROSTEP 1 — DADOS
+        if (currentMacroStep === 1) {
+            const label = currentSubSteps[currentSubStep];
+
+            switch (label) {
+                case "Dados Iniciais":
+                    return <StepDadosIniciais formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Dados do Veículo":
+                    return <StepDadosVeiculo formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Origem / Contrato":
+                    return <StepOrigemContrato formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Valores de Aluguel":
+                    return <StepValoresAluguel formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Dados do Motorista":
+                    return <StepDadosMotorista formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Jornada":
+                    return <StepJornada formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Salário":
+                    return <StepSalario formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Benefícios":
+                    return <StepBeneficios formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Vínculo":
+                    return <StepVinculo formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+            }
+        }
+
+        // MACROSTEP 2 — DOCUMENTOS
+        if (currentMacroStep === 2) {
+            const label = currentSubSteps[currentSubStep];
+
+            switch (label) {
+                case "CRLV":
+                    return <StepCRLV formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "CNH":
+                    return <StepCNH formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Contrato":
+                    return <StepContrato formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Fotos":
+                    return <StepFotos formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+
+                case "Outros":
+                    return <StepOutros formData={formData} setFormData={setFormData} onNext={handleNext} onBack={handleBack} />;
+            }
+        }
+
+        // MACROSTEP 3 — REVISÃO
+        if (currentMacroStep === 3) {
+            return (
+                <StepRevisaoFinal
+                    formData={formData}
+                    onBack={handleBack}
+                    onSubmit={() => {
+                        console.log("ENVIAR PARA FIRESTORE:", formData);
+                        clearWizardDraft();
+                        alert("Cadastro enviado com sucesso!");
+                    }}
                 />
-            ),
-        });
-    }
+            );
+        }
+    };
 
-    // MOTORISTA
-    if (tipoRequerimento === "motorista" || tipoRequerimento === "veiculo_motorista") {
-        steps.push({
-            label: "Dados do Motorista",
-            numero: "3.1",
-            status:
-                dadosMotorista.nome && dadosMotorista.cpf
-                    ? "concluido"
-                    : currentStep === steps.length
-                        ? "andamento"
-                        : "pendente",
-            componente: (
-                <StepDadosMotorista
-                    data={dadosMotorista}
-                    onChange={(f, v) => setDadosMotorista((p) => ({ ...p, [f]: v }))}
-                />
-            ),
-        });
-    }
-
-    // VÍNCULO
-    if (tipoRequerimento === "veiculo_motorista" && dadosMotorista.nome) {
-        steps.push({
-            label: "Vínculo",
-            numero: "4.1",
-            status:
-                dadosVinculo.motoristaId && dadosVinculo.veiculoId
-                    ? "concluido"
-                    : currentStep === steps.length
-                        ? "andamento"
-                        : "pendente",
-            componente: (
-                <StepVinculo
-                    data={dadosVinculo}
-                    onChange={(f, v) => setDadosVinculo((p) => ({ ...p, [f]: v }))}
-                />
-            ),
-        });
-    }
-
-    // ENVIO
-    steps.push({
-        label: "Envio",
-        numero: "5.1",
-        status: currentStep === steps.length ? "andamento" : "pendente",
-        componente: (
-            <StepEnviar
-                tipo={tipoRequerimento}
-                dados={{
-                    dadosIniciais,
-                    dadosVeiculo,
-                    dadosContrato,
-                    dadosMotorista,
-                    dadosVinculo,
-                }}
-            />
-        ),
-    });
-
+    // -------------------------------------------------------
+    // LAYOUT FINAL
+    // -------------------------------------------------------
     return (
-        <div className="container-fluid mt-4 mb-5">
-            <div className="row">
+        <div className="container py-4">
+
+            {/* MACROSTEPS */}
+            <MacroSteps
+                currentMacroStep={currentMacroStep}
+                steps={macroLabels}
+                formData={formData}
+                subSteps={subSteps}
+                onSelect={goToMacroStep}
+            />
+
+            <div className="row mt-4">
 
                 {/* SIDEBAR */}
-                <div className="col-md-3">
-                    <StepNavigator
-                        steps={steps.map((s, index) => ({
-                            id: index,
-                            label: s.label,
-                            numero: s.numero,
-                            status: s.status,
-                            onClick: () => setCurrentStep(index),
-                        }))}
-                        currentStep={currentStep}
-                    />
-                </div>
+                {(currentMacroStep === 1 || currentMacroStep === 2) && (
+                    <div className="col-md-3 mb-4">
+                        <StepNavigatorVertical
+                            subSteps={currentSubSteps}
+                            currentSubStep={currentSubStep}
+                            onSelect={goToSubStep}
+                            formData={formData}
+                        />
+                    </div>
+                )}
 
                 {/* CONTEÚDO */}
-                <div className="col-md-9">
-                    {steps[currentStep].componente}
-
-                    {/* NAVEGAÇÃO */}
-                    <div className="d-flex justify-content-between mt-4">
-                        {currentStep > 0 && (
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setCurrentStep((p) => p - 1)}
-                            >
-                                Voltar
-                            </button>
-                        )}
-
-                        {currentStep < steps.length - 1 && (
-                            <button
-                                className="btn btn-primary ms-auto"
-                                onClick={() => setCurrentStep((p) => p + 1)}
-                            >
-                                Próximo
-                            </button>
-                        )}
-                    </div>
+                <div className={currentMacroStep === 1 || currentMacroStep === 2 ? "col-md-9" : "col-12"}>
+                    {renderStep()}
                 </div>
-
             </div>
         </div>
     );
-};
-
-export default RequisicaoWizard;
+}
