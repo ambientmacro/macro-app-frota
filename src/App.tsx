@@ -22,26 +22,28 @@ import VisualizarChecklist from "./pages/public/VisualizarChecklist";
 
 // import LancarPontoJornada from "./pages/public/LancarPontoJornada";
 
-
 // Páginas públicas autenticadas (cliente/encarregado)
 import LancarCheckListEncarregado from "./pages/Encarregado/LancarCheckListEncarregado";
-
 
 // Páginas privadas (admin)
 import Dashboard from "./pages/client/Dashboard";
 import EmpresasAdmin from "./pages/admin/EmpresasAdmin";
+
+// 🔥 Página antiga (vamos comentar na rota)
 import NovoEquipamento from "./pages/admin/NovoEquipamento";
+
+// 🔥 Nova página Wizard
+import RequisicaoWizard from "./pages/admin/RequisicaoWizard/RequisicaoWizard";
+
 import NovoCheckList from "./pages/admin/NovoCheckList";
 import RelacionarEquipamentoChecklist from "./pages/admin/RelacionarEquipamentoChecklist";
 import LegendasAdmin from "./pages/admin/LegendasAdmin";
 import RespostasChecklist from "./pages/admin/RespostasChecklist";
-
 import FuncionariosAdmin from "./pages/admin/FuncionariosAdmin";
 
 function AppRoutes() {
   const { user, loading } = useUser();
 
-  // 🔥 Enquanto o Firebase verifica a sessão, não renderiza nada
   if (loading) {
     return (
       <div style={{ padding: 30, textAlign: "center" }}>
@@ -68,7 +70,6 @@ function AppRoutes() {
         <Route path="/visualizar-checklist/:id" element={<VisualizarChecklist />} />
         {/* <Route path="/lancar-ponto-jornada" element={<LancarPontoJornada />} /> */}
 
-
         {/* Encarregado */}
         <Route path="/lancar-checklist-encarregado" element={<LancarCheckListEncarregado />} />
       </Route>
@@ -85,7 +86,15 @@ function AppRoutes() {
 
         {/* Admin */}
         <Route path="/admin/empresas" element={<EmpresasAdmin />} />
+
+        {/* 🔥 NOVA ROTA DO WIZARD */}
+        <Route path="/admin/novo-equipamento" element={<RequisicaoWizard />} />
+
+        {/* 🔥 ROTA ANTIGA (comentada, mas mantida no código) */}
+        {/*
         <Route path="/admin/novo-equipamento" element={<NovoEquipamento />} />
+        */}
+
         <Route path="/admin/novo-checklist" element={<NovoCheckList />} />
         <Route path="/admin/relacionar-checklist" element={<RelacionarEquipamentoChecklist />} />
         <Route path="/admin/funcionarios" element={<FuncionariosAdmin />} />

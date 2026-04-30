@@ -7,7 +7,9 @@ import {
   FaBuilding,
   FaClipboardCheck,
   FaTruck,
-  FaUsers
+  FaUsers,
+  FaChevronDown,
+  FaChevronUp
 } from 'react-icons/fa';
 import { useUser } from '../contexts/UserContext';
 import Swal from 'sweetalert2';
@@ -20,6 +22,10 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
+  // 🔥 Submenus
+  const [openRequerimentos, setOpenRequerimentos] = useState(false);
+  const [openChecklist, setOpenChecklist] = useState(false);
+
   useEffect(() => {
     const handleResize = () => setViewportHeight(window.innerHeight);
     window.addEventListener('resize', handleResize);
@@ -30,12 +36,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { logout } = useUser();
   const navigate = useNavigate();
 
-  // 🔥 Igual ao sidebar público: só fecha se for mobile
   const handleLinkClick = () => {
     if (window.innerWidth < 768) onClose();
   };
 
-  // 🔥 Agora com confirmação de saída
   const handleLogout = () => {
     Swal.fire({
       title: 'Tem certeza que deseja sair?',
@@ -61,9 +65,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     backgroundColor: location.pathname.startsWith(path) ? '#0d6efd' : 'transparent',
     textDecoration: 'none',
     borderRadius: '8px',
-    marginBottom: '1rem',
+    marginBottom: '0.5rem',
     transition: '0.2s',
   });
+
+  const submenuStyle = {
+    paddingLeft: '2rem',
+    marginBottom: '0.5rem',
+  };
 
   return (
     <div
@@ -90,44 +99,76 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         <nav style={{ padding: '0 1rem' }}>
 
+          {/* MENU */}
           <Link to="/dashboard" onClick={handleLinkClick} style={linkStyle('/dashboard')}>
             <FaHome style={{ marginRight: 10 }} /> Menu
           </Link>
 
+          {/* EMPRESAS */}
           <Link to="/admin/empresas" onClick={handleLinkClick} style={linkStyle('/admin/empresas')}>
             <FaBuilding style={{ marginRight: 10 }} /> Empresas
           </Link>
 
+          {/* FUNCIONÁRIOS */}
           <Link to="/admin/funcionarios" onClick={handleLinkClick} style={linkStyle('/admin/funcionarios')}>
             <FaUsers style={{ marginRight: 10 }} /> Funcionários
           </Link>
 
-          <Link to="/admin/novo-equipamento" onClick={handleLinkClick} style={linkStyle('/admin/novo-equipamento')}>
-            <FaTruck style={{ marginRight: 10 }} /> Requerimento Contratual Veículos e Motoristas
-          </Link>
+          {/* 🔥 SUBMENU: REQUERIMENTOS */}
+          <div
+            style={linkStyle('/admin/novo-equipamento')}
+            onClick={() => setOpenRequerimentos(!openRequerimentos)}
+          >
+            <FaTruck style={{ marginRight: 10 }} />
+            Requerimentos
+            {openRequerimentos ? <FaChevronUp style={{ marginLeft: 'auto' }} /> : <FaChevronDown style={{ marginLeft: 'auto' }} />}
+          </div>
 
-          <Link to="/admin/novo-checklist" onClick={handleLinkClick} style={linkStyle('/admin/novo-checklist')}>
-            <FaClipboardCheck style={{ marginRight: 10 }} /> Checklist
-          </Link>
+          {openRequerimentos && (
+            <div style={{ marginLeft: '1rem', marginTop: '-0.5rem' }}>
+              <Link to="/admin/novo-equipamento" onClick={handleLinkClick} style={submenuStyle}>
+                • Novo Requerimento
+              </Link>
+            </div>
+          )}
 
-          <Link to="/admin/relacionar-checklist" onClick={handleLinkClick} style={linkStyle('/admin/relacionar-checklist')}>
-            <FaTools style={{ marginRight: 10 }} /> Relacionar Checklist ao Equipamento
-          </Link>
+          {/* 🔥 SUBMENU: CHECKLIST */}
+          <div
+            style={linkStyle('/admin/novo-checklist')}
+            onClick={() => setOpenChecklist(!openChecklist)}
+          >
+            <FaClipboardCheck style={{ marginRight: 10 }} />
+            Checklist
+            {openChecklist ? <FaChevronUp style={{ marginLeft: 'auto' }} /> : <FaChevronDown style={{ marginLeft: 'auto' }} />}
+          </div>
 
-          <Link to="/legendas" onClick={handleLinkClick} style={linkStyle('/legendas')}>
-            <FaTools style={{ marginRight: 10 }} /> Legendas
-          </Link>
+          {openChecklist && (
+            <div style={{ marginLeft: '1rem', marginTop: '-0.5rem' }}>
+              <Link to="/admin/novo-checklist" onClick={handleLinkClick} style={submenuStyle}>
+                • Criar Checklist
+              </Link>
 
-          <Link to="/respostas-checklist" onClick={handleLinkClick} style={linkStyle('/respostas-checklist')}>
-            <FaTools style={{ marginRight: 10 }} /> Respostas dos Checklists
-          </Link>
+              <Link to="/admin/relacionar-checklist" onClick={handleLinkClick} style={submenuStyle}>
+                • Relacionar ao Equipamento
+              </Link>
+
+              <Link to="/respostas-checklist" onClick={handleLinkClick} style={submenuStyle}>
+                • Respostas dos Checklists
+              </Link>
+
+              <Link to="/legendas" onClick={handleLinkClick} style={submenuStyle}>
+                • Legendas
+              </Link>
+            </div>
+          )}
 
         </nav>
       </div>
 
+      {/* LOGOUT */}
       <div style={{ padding: '1rem' }}>
         <button
-          onClick={handleLogout} // 🔥 Agora com SweetAlert
+          onClick={handleLogout}
           style={{
             width: '100%',
             backgroundColor: '#dc3545',
